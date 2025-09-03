@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zinzino – Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <style>
+    :root {
+      --brand-gradient: linear-gradient(135deg, #8e2de2, #4a00e0);
+      --text: #fff;
+      --overlay: rgba(0,0,0,.22);
+      --maxw: 1100px;
+      --sidebar-w: 260px;
+      --btn-size: 40px;
+      --anim-time: 320ms;
+      --anim-ease: cubic-bezier(.2,.9,.25,1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "Poppins", sans-serif;
+      color: var(--text);
+      background: url("https://i.postimg.cc/sD96Zykj/file-00000000db9861f994c233d10d71c73b.png") no-repeat center/cover fixed;
+      line-height: 1.5;
+    }
+    body::before { content: ""; position: fixed; inset: 0; background: var(--overlay); backdrop-filter: blur(1px); z-index: -1; }
+    header { position: fixed; top: 0; left: 0; right: 0; background: rgba(0,0,0,.55); backdrop-filter: blur(6px); border-bottom: 1px solid rgba(255,255,255,.12); z-index: 100; }
+    .header__inner { max-width: var(--maxw); margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: .9rem .75rem; }
+    .logo { font-size: 30px; letter-spacing: .18em; font-weight: 600; background: var(--brand-gradient); -webkit-background-clip: text; color: transparent; }
+    .menu-toggle { width: var(--btn-size); height: var(--btn-size); background: rgba(255,255,255,.1); border: none; border-radius: 10px; cursor: pointer; }
+    .menu-toggle:hover { background: rgba(255,255,255,.18); transform: scale(1.03); }
+    .menu-toggle svg { width: 22px; height: 22px; display: block; }
+    .menu-toggle .bar { stroke: white; stroke-width: 2; stroke-linecap: round; transition: transform var(--anim-time) var(--anim-ease), opacity calc(var(--anim-time)/1.6) ease; }
+    body.menu-open .menu-toggle .bar:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+    body.menu-open .menu-toggle .bar:nth-child(2) { opacity: 0; transform: scaleX(.2); }
+    body.menu-open .menu-toggle .bar:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+    .sidebar { position: fixed; top: 0; right: -260px; width: 260px; height: 100%; background: rgba(15,15,15,.92); backdrop-filter: blur(10px); z-index: 300; transition: right .32s var(--anim-ease); padding: 3.5rem 1rem 2rem; }
+    .sidebar.active { right: 0; }
+    .sidebar__nav { display: flex; flex-direction: column; gap: 1rem; }
+    .sidebar__nav a { color: #fff; text-decoration: none; font-size: 16px; padding: .6rem 1rem; border-radius: 8px; transition: background .25s ease; }
+    .sidebar__nav a:hover { background: rgba(255,255,255,.1); }
+    .sidebar__nav a.active { background: var(--brand-gradient); }
+    main { padding-top: 80px; min-height: 100vh; max-width: var(--maxw); margin: 0 auto; opacity: 0; transition: opacity 0.5s ease; }
+    main.visible { opacity: 1; }
+    #loading-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.8); display: flex; justify-content: center; align-items: center; z-index: 400; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+    #loading-overlay.active { opacity: 1; pointer-events: auto; }
+    .spinner { width: 50px; height: 50px; animation: spin 1s linear infinite; }
+    .spinner circle { stroke: url(#brand-gradient); stroke-width: 5; fill: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #logout-modal { position: fixed; inset: 0; background: rgba(0,0,0,.8); display: none; justify-content: center; align-items: center; z-index: 500; }
+    #logout-modal.active { display: flex; }
+    .logout-modal__content { background: linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.06)); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 1.5rem; max-width: 400px; width: 90%; box-shadow: 0 6px 16px rgba(0,0,0,.3); text-align: center; }
+    .logout-modal__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); -webkit-background-clip: text; color: transparent; margin-bottom: 1rem; }
+    .logout-modal__message { font-size: 1rem; color: #f5f7fa; margin-bottom: 1.5rem; }
+    .logout-modal__buttons { display: flex; gap: 1rem; justify-content: center; }
+    .logout-modal__btn { padding: .6rem 1.2rem; border-radius: 8px; font-size: .95rem; font-weight: 500; color: #fff; border: none; cursor: pointer; transition: transform .25s ease; }
+    .logout-modal__btn--confirm { background: linear-gradient(135deg, #28a745, #1d7a34); }
+    .logout-modal__btn--cancel { background: linear-gradient(135deg, #e63946, #b32d38); }
+    .logout-modal__btn:hover { transform: translateY(-2px); }
+    /* Estilos para o modal de notificação */
+    #notification-modal { position: fixed; inset: 0; background: rgba(0,0,0,.8); display: none; justify-content: center; align-items: center; z-index: 500; opacity: 0; transition: opacity 0.3s ease; }
+    #notification-modal.active { display: flex; opacity: 1; }
+    .notification-modal__content { background: linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.06)); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 1.5rem; max-width: 400px; width: 90%; box-shadow: 0 6px 16px rgba(0,0,0,.3); text-align: center; animation: fadeIn 0.3s ease; }
+    .notification-modal__message { font-size: 1rem; color: #f5f7fa; font-weight: 400; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    #niveis .hero { min-height: calc(100vh - 80px); display: flex; align-items: flex-start; justify-content: center; text-align: left; padding: 40px 1rem 24px; }
+    #niveis .hero__inner { max-width: 700px; animation: fadeInUp 1.2s ease both; text-align: left; width: 100%; }
+    #niveis h1 { font-size: clamp(28px, 4vw, 42px); margin-bottom: 1rem; text-align: left; }
+    #niveis .lead { font-size: clamp(16px, 2vw, 18px); margin-bottom: 1.5rem; color: #f5f7fa; text-align: left; }
+    #niveis hr { border: none; height: 1px; background: rgba(255,255,255,.18); margin: 1.5rem 0; }
+    #niveis .hero__balance { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,.25); }
+    #niveis .hero__balance p { font-size: 1.2rem; font-weight: 500; color: #f5f7fa; }
+    #niveis .hero__balance span { color: #fff; font-weight: 600; }
+    #niveis .hero__level { font-size: 1.2rem; font-weight: 500; color: #f5f7fa; margin-top: .5rem; }
+    #niveis .hero__level span { color: #fff; font-weight: 600; }
+    #niveis .cards-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+    #niveis .card { background: linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.06)); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 1.5rem; text-align: center; font-weight: 600; font-size: 1rem; color: #fff; box-shadow: 0 6px 16px rgba(0,0,0,.2); transition: transform .3s ease, box-shadow .3s ease, background .3s ease; cursor: pointer; position: relative; overflow: hidden; }
+    #niveis .card:hover { transform: translateY(-8px); box-shadow: 0 10px 20px rgba(0,0,0,.3); background: linear-gradient(145deg, rgba(255,255,255,.18), rgba(255,255,255,.1)); }
+    #niveis .card.disabled { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.08); color: rgba(255,255,255,.4); cursor: not-allowed; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+    #niveis .card.rented .btn { background: linear-gradient(135deg, #28a745, #1d7a34); color: #fff; cursor: default; pointer-events: none; box-shadow: none; }
+    #niveis .card.disabled .btn { background: rgba(255,255,255,.08); color: rgba(255,255,255,.4); cursor: not-allowed; }
+    #niveis .card__icon { width: 40px; height: 40px; margin: 0 auto .75rem; fill: #fff; opacity: .9; }
+    #niveis .card__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); -webkit-background-clip: text; color: transparent; margin-bottom: .75rem; }
+    #niveis .card__info { font-size: .9rem; font-weight: 400; color: #f5f7fa; margin-bottom: .5rem; }
+    #niveis .card__info span { color: #fff; font-weight: 600; }
+    #niveis .btn { display: inline-block; padding: .6rem 1.2rem; background: var(--brand-gradient); color: #fff; text-decoration: none; border-radius: 10px; font-size: .95rem; font-weight: 500; transition: transform .3s ease, box-shadow .3s ease; margin-top: 1rem; }
+    #niveis .btn:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(142,45,226,.4); }
+    #perfil { display: none; }
+    .profile__inner { max-width: 700px; margin: 0 auto; }
+    .profile h1 { font-size: clamp(28px, 4vw, 42px); margin-bottom: 1rem; text-align: center; }
+    .profile__form { display: flex; flex-direction: column; gap: 1rem; }
+    .profile__card { background: rgba(255,255,255,.08); padding: 1.5rem; border-radius: 16px; box-shadow: 0 6px 16px rgba(0,0,0,.2); }
+    .profile__card__title { font-size: 1.2rem; font-weight: 600; background: var(--brand-gradient); -webkit-background-clip: text; color: transparent; text-align: center; margin-bottom: 1rem; }
+    .profile__card label { display: block; margin-bottom: .5rem; }
+    .profile__card input { width: 100%; padding: .75rem; margin-bottom: .75rem; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.28); border-radius: 8px; color: #fff; }
+    .btn.edit-mode { background: linear-gradient(135deg, #28a745, #1d7a34); }
+    .error-message { color: #e63946; font-size: 12px; display: none; }
+    .error-message.active { display: block; }
+    #deposito { display: none; }
+    .deposit { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 80px 1rem 0; }
+    .deposit__inner { max-width: 700px; animation: fadeInUp 1.2s ease both; }
+    .deposit h1 { font-size: clamp(28px, 4vw, 42px); margin-bottom: 0.5rem; }
+    .deposit__form { display: flex; flex-direction: column; gap: 1rem; }
+    .deposit__card { background: linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.06)); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 1.5rem; box-shadow: 0 6px 16px rgba(0,0,0,.2); transition: transform .3s ease, box-shadow .3s ease; }
+    .deposit__card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,.3); }
+    .deposit__card__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); -webkit-background-clip: text; color: transparent; margin-bottom: 1rem; text-align: center; }
+    .deposit__card__icon { width: 40px; height: 40px; margin: 0 auto .75rem; fill: #fff; opacity: .9; }
+    .deposit__card label { display: block; font-size: 14px; font-weight: 500; margin-bottom: .5rem; color: #f5f7fa; }
+    .deposit__card input, .deposit__card select { width: 100%; padding: .75rem; margin-bottom: .75rem; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.28); border-radius: 8px; color: #fff; font-size: 14px; }
+    .deposit__card input[type="file"] { padding: .5rem; }
+    .deposit__card input[type="file"]::-webkit-file-upload-button { background: var(--brand-gradient); color: #fff; border: none; padding: .5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 14px; transition: transform .25s ease; }
+    .deposit__card input[type="file"]::-webkit-file-upload-button:hover { transform: translateY(-2px); }
+    .deposit__card input:focus, .deposit__card select:focus { outline: none; border-color: #8e2de2; }
+    .deposit__card input::placeholder, .deposit__card select:invalid { color: #ccc; opacity: 1; font-size: 14px; }
+    .proof-preview { margin-top: .5rem; max-height: 200px; overflow: auto; }
+    .proof-preview img { max-width: 300px; width: 100%; height: auto; border-radius: 8px; border: 1px solid rgba(255,255,255,.18); }
+    .deposit__info { background: linear-gradient(145deg, rgba(255,255,255,.15), rgba(255,255,255,.08)); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 1.5rem; box-shadow: 0 6px 16px rgba(0,0,0,.2); transition: transform .3s ease, box-shadow .3s ease; margin-bottom: 1rem; }
+    .deposit__info:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,.3); }
+    .deposit__info__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); -webkit-background-clip: text; color: transparent; margin-bottom: 1rem; text-align: center; }
+    .deposit__info__icon { width: 40px; height: 40px; margin: 0 auto .75rem; fill: #fff; opacity: .9; }
+    .deposit__info__content { font-size: 14px; color: #f5f7fa; }
+    .deposit__info__content p { margin-bottom: .5rem; }
+    .deposit__history { margin-top: 2rem; background: linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.06)); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 1.5rem; box-shadow: 0 6px 16px rgba(0,0,0,.2); }
+    .deposit__history h2 { font-size: 1.5rem; margin-bottom: 1rem; }
+    .deposit__history table { width: 100%; border-collapse: collapse; }
+    .deposit__history th, .deposit__history td { padding: .75rem; text-align: left; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,.18); }
+    .deposit__history th { font-weight: 600; color: #f5f7fa; }
+    .deposit__history td { color: #fff; }
+    .deposit__history td.status-pendente { color: #ffeb3b; }
+    .deposit__history td.status-sucesso { color: #4caf50; }
+    .deposit__history td.status-recusado { color: #f44336; }
+    #saque { display: none; }
+    .withdraw { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 80px 1rem 0; }
+    .withdraw__inner { max-width: 700px; animation: fadeInUp 1.2s ease both; }
+    .withdraw h1 { font-size: clamp(28px, 4vw, 42px); margin-bottom: 0.5rem; }
+    .withdraw__form { display: flex; flex-direction: column; gap: 1rem; }
+    .withdraw__card { background: linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.06)); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 1.5rem; box-shadow: 0 6px 16px rgba(0,0,0,.2); transition: transform .3s ease, box-shadow .3s ease; }
+    .withdraw__card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,.3); }
+    .withdraw__card__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); -webkit-background-clip: text; color: transparent; margin-bottom: 1rem; text-align: center; }
+    .withdraw__card__icon { width: 40px; height: 40px; margin: 0 auto .75rem; fill: #fff; opacity: .9; }
+    .withdraw__card label { display: block; font-size: 14px; font-weight: 500; margin-bottom: .5rem; color: #f5f7fa; }
+    .withdraw__card input { width: 100%; padding: .75rem; margin-bottom: .75rem; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.28); border-radius: 8px; color: #fff; font-size: 14px; }
+    .withdraw__card input:focus { outline: none; border-color: #8e2de2; }
+    .withdraw__card input::placeholder { color: #ccc; opacity: 1; font-size: 14px; }
+    .withdraw__card input:invalid { border-color: #f44336; }
+    .error-message { color: #f44336; font-size: 12px; margin-top: -0.5rem; margin-bottom: 0.75rem; display: none; }
+    .error-message.active { display: block; }
+    .withdraw__balance { background: linear-gradient(145deg, rgba(255,255,255,.15), rgba(255,255,255,.08)); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 1.5rem; box-shadow: 0 6px 16px rgba(0,0,0,.2); transition: transform .3s ease, box-shadow .3s ease; margin-bottom: 1rem; }
+    .withdraw__balance:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,.3); }
+    .withdraw__balance__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); -webkit-background-clip: text; color: transparent; margin-bottom: 1rem; text-align: center; }
+    .withdraw__balance__icon { width: 40px; height: 40px; margin: 0 auto .75rem; fill: #fff; opacity: .9; }
+    .withdraw__balance__content { font-size: 14px; color: #f5f7fa; }
+    .withdraw__balance__content p { margin-bottom: .5rem; }
+    .withdraw__history { margin-top: 2rem; background: linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.06)); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 1.5rem; box-shadow: 0 6px 16px rgba(0,0,0,.2); }
+    .withdraw__history h2 { font-size: 1.5rem; margin-bottom: 1rem; }
+    .withdraw__history table { width: 100%; border-collapse: collapse; }
+    .withdraw__history th, .withdraw__history td { padding: .75rem; text-align: left; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,.18); }
+    .withdraw__history th { font-weight: 600; color: #f5f7fa; }
+    .withdraw__history td { color: #fff; }
+    .withdraw__history td.status-pendente { color: #ffeb3b; }
+    .withdraw__history td.status-sucesso { color: #4caf50; }
+    .withdraw__history td.status-recusado { color: #f44336; }
+    #equipa { display: none; }
+    .team { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 80px 1rem 0; }
+    .team__inner { max-width: 700px; animation: fadeInUp 1.2s ease both; }
+    .team h1 { font-size: clamp(28px, 4vw, 42px); margin-bottom: 0.5rem; }
+    .team__info { background: linear-gradient(145deg, rgba(255,255,255,.15), rgba(255,255,255,.08)); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 1.5rem; box-shadow: 0 6px 16px rgba(0,0,0,.2); transition: transform .3s ease, box-shadow .3s ease; margin-bottom: 1rem; }
+    .team__info:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,.3); }
+    .team__info__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); -webkit-background-clip: text; color: transparent; margin-bottom: 1rem; text-align: center; }
+    .team__info__icon { width: 40px; height: 40px; margin: 0 auto .75rem; fill: #fff; opacity: .9; }
+    .team__info__content { font-size: 14px; color: #f5f7fa; }
+    .team__info__content p { margin-bottom: .5rem; }
+    .invite-link { margin-bottom: 1.5rem; }
+    .invite-link label { display: block; font-size: 14px; font-weight: 500; margin-bottom: .5rem; color: #f5f7fa; }
+    .invite-link__container { display: flex; gap: .5rem; align-items: center; }
+    .invite-link__container input { flex: 1; padding: .75rem; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.28); border-radius: 8px; color: #fff; font-size: 14px; }
+    .invite-link__container input[readonly] { cursor: default; }
+    .invite-link__container .btn { padding: .75rem 1.5rem; }
+    .team__members { margin-top: 2rem; background: linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.06)); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 1.5rem; box-shadow: 0 6px 16px rgba(0,0,0,.2); transition: transform .3s ease, box-shadow .3s ease; }
+    .team__members:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,.3); }
+    .team__members h2 { font-size: 1.5rem; margin-bottom: 1rem; }
+    .team__members table { width: 100%; border-collapse: collapse; }
+    .team__members th, .team__members td { padding: .75rem; text-align: left; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,.18); }
+    .team__members th { font-weight: 600; color: #f5f7fa; }
+    .team__members td { color: #fff; }
+    .team__members td.status-ativo { color: #4caf50; }
+    .team__members td.status-inativo { color: #f44336; }
+    #sobre { display: none; }
+    .about { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 80px 1rem 0; }
+    .about__inner { max-width: 700px; animation: fadeInUp 1.2s ease both; }
+    .about h1 { font-size: clamp(28px, 4vw, 42px); margin-bottom: 0.5rem; }
+    .about__info { background: linear-gradient(145deg, rgba(255,255,255,.15), rgba(255,255,255,.08)); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 1.5rem; box-shadow: 0 6px 16px rgba(0,0,0,.2); transition: transform .3s ease, box-shadow .3s ease; margin-bottom: 1rem; }
+    .about__info:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,.3); }
+    .about__info__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); -webkit-background-clip: text; color: transparent; margin-bottom: 1rem; text-align: center; }
+    .about__info__icon { width: 40px; height: 40px; margin: 0 auto .75rem; fill: #fff; opacity: .9; }
+    .about__info__content { font-size: 14px; color: #f5f7fa; }
+    .about__info__content p { margin-bottom: .5rem; }
+    .about__info__content ul { list-style: none; margin: 1rem 0; }
+    .about__info__content ul li { margin-bottom: .5rem; padding-left: 1.5rem; position: relative; }
+    .about__info__content ul li::before { content: "•"; position: absolute; left: 0; color: #4caf50; font-size: 1.2rem; }
+    .btn { padding: .5rem 1rem; background: var(--brand-gradient); color: #fff; border-radius: 8px; font-size: .9rem; border: none; cursor: pointer; transition: transform .25s ease; display: inline-block; text-decoration: none; }
+    .btn:hover { transform: translateY(-2px); }
+    #contacte-nos { display: none; }
+    .contact { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 80px 1rem 0; }
+    .contact__inner { max-width: 700px; animation: fadeInUp 1.2s ease both; }
+    .contact h1 { font-size: clamp(28px, 4vw, 42px); margin-bottom: 1.5rem; }
+    .contact__buttons { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,.25); display: flex; gap: 1rem; flex-wrap: nowrap; justify-content: center; }
+    .btn--border { position: relative; padding: 0.75rem 1.5rem 0.75rem 2.5rem; background: transparent; color: #fff; border-radius: 8px; font-size: 0.9rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; transition: transform 0.25s ease; z-index: 1; }
+    .btn--border::before { content: ""; position: absolute; inset: 0; border: 2px solid transparent; border-radius: 8px; background: var(--brand-gradient) border-box; -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0); mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0); -webkit-mask-composite: destination-out; mask-composite: exclude; z-index: -1; }
+    .btn--border:hover { transform: translateY(-2px); }
+    .btn--border svg { width: 20px; height: 20px; fill: #fff; transition: fill 0.25s ease; }
+    .btn--border:hover svg { fill: url(#brand-gradient); }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 768px) {
+      .logo { font-size: 24px; }
+      #niveis .cards-container { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+      #niveis .card { padding: 1.2rem; }
+      #niveis .card__title { font-size: 1.2rem; }
+      #niveis .card__info { font-size: .85rem; }
+      .sidebar { width: 220px; right: -220px; }
+      .sidebar.active { right: 0; }
+      .deposit h1, .withdraw h1, .team h1, .about h1, .contact h1 { font-size: 26px; }
+      .proof-preview img { max-width: 100%; }
+      .deposit__info__title, .deposit__card__title, .withdraw__balance__title, .withdraw__card__title, .team__info__title, .about__info__title { font-size: 1.2rem; }
+      .deposit__info__icon, .deposit__card__icon, .withdraw__balance__icon, .withdraw__card__icon, .team__info__icon, .about__info__icon { width: 32px; height: 32px; }
+      .contact__buttons { gap: 0.5rem; padding: 1rem; }
+      .btn--border { padding: 0.5rem 1rem 0.5rem 2rem; font-size: 0.85rem; }
+      .logout-modal__content { max-width: 90%; padding: 1rem; }
+      .logout-modal__title { font-size: 1.2rem; }
+      .logout-modal__message { font-size: .9rem; }
+      .logout-modal__btn { padding: .5rem 1rem; font-size: .85rem; }
+      .notification-modal__content { max-width: 90%; padding: 1rem; }
+      .notification-modal__message { font-size: .9rem; }
+    }
+    @media (max-height: 600px) {
+      .deposit, .withdraw, .team, .about, .contact { padding-top: 60px; }
+    }
+  </style>
+</head>
+<body>
+  <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true">
+    <defs>
+      <linearGradient id="brand-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#8e2de2" />
+        <stop offset="100%" style="stop-color:#4a00e0" />
+      </linearGradient>
+    </defs>
+  </svg>
+  <div id="loading-overlay">
+    <svg class="spinner" viewBox="0 0 50 50" aria-hidden="true">
+      <circle cx="25" cy="25" r="20" stroke-dasharray="62.8 62.8" stroke="url(#brand-gradient)" stroke-width="5" fill="none" />
+    </svg>
+  </div>
+  <div id="logout-modal" role="dialog" aria-labelledby="logout-modal-title" aria-describedby="logout-modal-message">
+    <div class="logout-modal__content">
+      <h2 class="logout-modal__title" id="logout-modal-title">Confirmar Logout</h2>
+      <p class="logout-modal__message" id="logout-modal-message">Deseja realmente sair da sua conta?</p>
+      <div class="logout-modal__buttons">
+        <button class="logout-modal__btn logout-modal__btn--confirm" id="logout-confirm">Sim</button>
+        <button class="logout-modal__btn logout-modal__btn--cancel" id="logout-cancel">Não</button>
+      </div>
+    </div>
+  </div>
+  <div id="notification-modal" role="dialog" aria-describedby="notification-modal-message">
+    <div class="notification-modal__content">
+      <p class="notification-modal__message" id="notification-modal-message"></p>
+    </div>
+  </div>
+  <header>
+    <div class="header__inner">
+      <button class="menu-toggle" id="btnMenu" aria-label="Abrir menu">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path class="bar" d="M4 6h16"/><path class="bar" d="M4 12h16"/><path class="bar" d="M8 18h12"/></svg>
+      </button>
+      <div class="logo">ZINZINO</div>
+    </div>
+  </header>
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar__nav">
+      <a href="#" data-target="niveis" class="active">Nível</a>
+      <a href="#" data-target="perfil">Perfil</a>
+      <a href="#" data-target="deposito">Depósito</a>
+      <a href="#" data-target="saque">Saque</a>
+      <a href="#" data-target="equipa">Equipa</a>
+      <a href="#" data-target="sobre">Sobre</a>
+      <a href="#" data-target="contacte-nos">Contacte-nos</a>
+      <a href="#" id="logout">Sair</a>
+    </div>
+  </nav>
+  <main id="niveis">
+    <section class="hero" id="main-content">
+      <div class="hero__inner">
+        <h1>Isso não é apenas uma plataforma.</h1>
+        <p class="lead">É a ZINZINO – a próxima geração de magnatas.</p>
+        <hr>
+        <div class="hero__balance">
+          <p>Saldo Disponível: <span id="balance-amount">500.00 Kz</span></p>
+          <p class="hero__level">Nível Alugado: <span id="level-rented">0</span></p>
+        </div>
+        <div class="cards-container"></div>
+      </div>
+    </section>
+  </main>
+  <main id="perfil" class="profile" style="display:none">
+    <div class="profile__inner">
+      <h1>Seu Perfil</h1>
+      <form class="profile__form">
+        <div class="profile__card">
+          <div class="profile__card__title">Informações do Usuário</div>
+          <label for="username">Nome de Usuário</label>
+          <input type="text" id="username" readonly />
+          <label for="invite-code">Código de Convite</label>
+          <input type="text" id="invite-code" readonly />
+        </div>
+        <div class="profile__card">
+          <div class="profile__card__title">Informações Bancárias</div>
+          <label for="bank-name">Nome do Banco</label>
+          <input type="text" id="bank-name" placeholder="Digite o nome do banco" required />
+          <label for="iban">IBAN</label>
+          <input type="text" id="iban" placeholder="Digite o IBAN (21 dígitos)" pattern="[0-9]{21}" maxlength="21" required />
+          <div class="error-message" id="iban-error">O IBAN deve conter exatamente 21 dígitos numéricos.</div>
+        </div>
+        <button type="button" class="btn" id="editProfileBtn">Salvar Perfil</button>
+      </form>
+    </div>
+  </main>
+  <main id="deposito" class="deposit" style="display:none">
+    <div class="deposit__inner">
+      <h1>Depósito</h1>
+      <div class="deposit__info">
+        <svg class="deposit__info__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        <div class="deposit__info__title">Informações de Depósito</div>
+        <div class="deposit__info__content">
+          <p><strong>Saldo Disponível:</strong> <span id="available-balance">0.00</span> Kz</p>
+          <p>1. Valor mínimo: 5000 Kz</p>
+          <p>2. Os depósitos devem ser feitos no período das 9h às 21h</p>
+        </div>
+      </div>
+      <form class="deposit__form">
+        <div class="deposit__card">
+          <svg class="deposit__card__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor" d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V8h16v10z"/>
+          </svg>
+          <div class="deposit__card__title">Realizar Depósito</div>
+          <label for="deposit-amount">Valor do Depósito</label>
+          <input type="number" id="deposit-amount" name="deposit-amount" placeholder="Digite o valor do depósito (mínimo 5000 Kz)" min="5000" step="0.01" />
+          <label for="payment-method">Método de Pagamento</label>
+          <select id="payment-method" name="payment-method" required>
+            <option value="" disabled selected>Selecione o método de pagamento</option>
+            <option value="transferencia">Transferência Bancária</option>
+            <option value="referencia">Pagamento por Referência</option>
+          </select>
+          <label for="proof-upload">Comprovativo</label>
+          <input type="file" id="proof-upload" name="proof-upload" accept=".jpg,.jpeg,.png" />
+          <div id="proof-preview" class="proof-preview"></div>
+        </div>
+        <button type="button" class="btn" id="confirmDepositBtn">Confirmar Depósito</button>
+      </form>
+      <div class="deposit__history" id="deposit-history" style="display: none;">
+        <h2>Histórico de Depósitos</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Valor</th>
+              <th>Data</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="history-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+  <main id="saque" class="withdraw" style="display:none">
+    <div class="withdraw__inner">
+      <h1>Saque</h1>
+      <div class="withdraw__balance">
+        <svg class="withdraw__balance__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        <div class="withdraw__balance__title">Informações de Saque</div>
+        <div class="withdraw__balance__content">
+          <p><strong>Saldo Disponível:</strong> <span id="withdraw-balance-amount">0.00</span> Kz</p>
+          <p>1. Valor mínimo: 1500 Kz</p>
+          <p>2. Os saques devem ser feitos no período das 9h até 19h</p>
+          <p>3. Os saques são processados em até 24h</p>
+          <p>4. Taxa de saque: 9%</p>
+        </div>
+      </div>
+      <form class="withdraw__form">
+        <div class="withdraw__card">
+          <svg class="withdraw__card__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor" d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V8h16v10z"/>
+          </svg>
+          <div class="withdraw__card__title">Realizar Saque</div>
+          <label for="withdraw-amount">Valor do Saque</label>
+          <input type="number" id="withdraw-amount" name="withdraw-amount" placeholder="Digite o valor do saque (mínimo 1500 Kz)" min="1500" step="0.01" required />
+          <label for="withdraw-iban">IBAN</label>
+          <input type="text" id="withdraw-iban" name="iban" readonly />
+          <div class="error-message" id="withdraw-iban-error">O IBAN deve conter exatamente 21 dígitos numéricos.</div>
+        </div>
+        <button type="button" class="btn" id="confirmWithdrawBtn">Confirmar Saque</button>
+      </form>
+      <div class="withdraw__history" id="withdraw-history" style="display: none;">
+        <h2>Histórico de Saques</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Valor (Líquido)</th>
+              <th>Data</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="withdraw-history-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+  <main id="equipa" class="team" style="display:none">
+    <div class="team__inner">
+      <h1>Equipa</h1>
+      <div class="team__info">
+        <svg class="team__info__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        <div class="team__info__title">Gerenciar Equipa</div>
+        <div class="team__info__content">
+          <p><strong>Total de Membros:</strong> <span id="total-members">0</span></p>
+          <p><strong>Membros Ativos:</strong> <span id="active-members">0</span></p>
+          <p>Convide amigos e ganhe 25% de seus depósitos.</p>
+        </div>
+      </div>
+      <div class="invite-link">
+        <label for="invite-url">Link de Convite</label>
+        <div class="invite-link__container">
+          <input type="text" id="invite-url" readonly />
+          <button type="button" class="btn" id="copyInviteBtn" aria-label="Copiar link">Copiar</button>
+        </div>
+      </div>
+      <div class="team__members" id="team-members">
+        <h2>Membros da Equipa</h2>
+        <table role="grid">
+          <thead>
+            <tr role="row">
+              <th role="columnheader">E-mail</th>
+              <th role="columnheader">Status</th>
+            </tr>
+          </thead>
+          <tbody id="members-table-body" role="rowgroup"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+  <main id="sobre" class="about" style="display:none">
+    <div class="about__inner">
+      <h1>Sobre</h1>
+      <div class="about__info" role="region" aria-labelledby="about-info-title">
+        <svg class="about__info__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        <h2 class="about__info__title" id="about-info-title">Descubra a Zinzino</h2>
+        <div class="about__info__content">
+          <p>Embarque numa jornada de prosperidade com a Zinzino, a plataforma de investimento que está transformando vidas financeiras com segurança e inovação! Somos uma empresa confiável, regulamentada e líder global, comprometida em oferecer oportunidades de ganhos excepcionais para todos os nossos parceiros.</p>
+          <p>Como Parceiro Independente, você pode começar com 5000Kz, aproveitando nosso modelo de vendas diretas para construir sua rede e alcançar liberdade financeira. Nossa plataforma é intuitiva, segura e projetada para todos – se você sabe usar um smartphone, pode investir com a Zinzino!</p>
+          <ul>
+            <li><strong>Níveis de Investimento</strong>: Escolha entre 8 níveis incríveis, cada um com uma renda diária de 20% do investimento inicial e duração de 50 dias:<br>
+              - <strong>Nível 1</strong>: Investimento de 5000Kz, renda diária de 1000Kz.<br>
+              - <strong>Nível 2</strong>: Investimento de 10000Kz, renda diária de 2000Kz.<br>
+              - <strong>Nível 3</strong>: Investimento de 20000Kz, renda diária de 4000Kz.<br>
+              - <strong>Nível 4</strong>: Investimento de 40000Kz, renda diária de 8000Kz.<br>
+              - <strong>Nível 5</strong>: Investimento de 80000Kz, renda diária de 16000Kz.<br>
+              - <strong>Nível 6</strong>: Investimento de 160000Kz, renda diária de 32000Kz.<br>
+              - <strong>Nível 7</strong>: Investimento de 320000Kz, renda diária de 64000Kz.<br>
+              - <strong>Nível 8</strong>: Investimento de 640000Kz, renda diária de 128000Kz.</li>
+            <li><strong>Comissões de Convite</strong>: Convide um amigo e receba 25% do depósito inicial dele! Além disso, ganhe comissões adicionais de 10% a 30% em vendas diretas de produtos, como o BalanceOil, e bônus por construir sua equipe.</li>
+            <li><strong>Depósitos e Retiradas</strong>: Comece rapidamente com depósitos instantâneos através de métodos confiáveis. As retiradas são processadas em minutos, garantindo que seus ganhos cheguem ao seu bolso sem demora. Nossa equipe de suporte está pronta para ajudar a qualquer momento!</li>
+          </ul>
+          <p>Com a Zinzino, você investe com confiança em uma plataforma regulamentada e segura. Comece hoje e construa seu futuro financeiro!</p>
+          <a href="#" data-target="deposito" class="btn">Comece a Investir Agora!</a>
+        </div>
+      </div>
+    </div>
+  </main>
+  <main id="contacte-nos" class="contact" style="display:none">
+    <div class="contact__inner">
+      <h1>Contacte-nos</h1>
+      <div class="contact__buttons">
+        <a href="https://t.me/zinzinoassistance" target="_blank" class="btn btn--border">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+          </svg>
+          Suporte
+        </a>
+        <a href="https://t.me/+mKY_nVZEJx80MmVk" target="_blank" class="btn btn--border">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20.665 3.717l-2.237 10.54c-.167.787-.662 1.008-1.343.632l-3.417-2.51-1.654 1.594c-.183.183-.337.333-.672.333l.246-3.492 6.367-5.75c.278-.25-.061-.387-.428-.154L9.56 9.92l-3.416-.996c-.737-.216-.755-.75.154-1.113l13.36-5.14c.614-.236 1.147.141.997.846z" />
+          </svg>
+          Telegram Oficial
+        </a>
+      </div>
+    </div>
+  </main>
+  <script>
+  // Função para inicializar o Supabase
+  function initializeSupabase() {
+    if (typeof window.supabase === 'undefined') {
+      console.error('Erro: Biblioteca Supabase não foi carregada.');
+      showNotification('Erro ao carregar a biblioteca Supabase. Tente novamente mais tarde.', 3000);
+      return null;
+    }
+    const supabaseUrl = 'https://ryqyjpzzozpmgvkaciwf.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5cXlqcHp6b3pwbWd2a2FjaXdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0NzUxNDYsImV4cCI6MjA3MjA1MTE0Nn0.b_KLueY1HyakuX_QpLoepcgLkh22Fr9MPJ_Qhf8h_Mw';
+    return window.supabase.createClient(supabaseUrl, supabaseKey);
+  }
+
+  // Função para exibir notificações estilizadas
+  function showNotification(message, duration = 3000) {
+    const notificationModal = document.getElementById('notification-modal');
+    const notificationMessage = document.getElementById('notification-modal-message');
+    notificationMessage.textContent = message;
+    notificationModal.classList.add('active');
+    setTimeout(() => {
+      notificationModal.classList.remove('active');
+    }, duration);
+  }
+
+  // Eventos para fechar o modal de notificação
+  const notificationModal = document.getElementById('notification-modal');
+  window.addEventListener('click', (e) => {
+    if (notificationModal.classList.contains('active') && e.target === notificationModal) {
+      notificationModal.classList.remove('active');
+    }
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && notificationModal.classList.contains('active')) {
+      notificationModal.classList.remove('active');
+    }
+  });
+
+  // Aguarda o carregamento do DOM
+  document.addEventListener('DOMContentLoaded', async () => {
+    const supabase = initializeSupabase();
+    if (!supabase) return;
+
+    const bodyEl = document.body;
+    const sidebar = document.getElementById("sidebar");
+    const btnMenu = document.getElementById("btnMenu");
+    const loadingOverlay = document.getElementById("loading-overlay");
+    const logoutModal = document.getElementById("logout-modal");
+    const logoutBtn = document.getElementById("logout");
+    const logoutConfirm = document.getElementById("logout-confirm");
+    const logoutCancel = document.getElementById("logout-cancel");
+    const copyInviteBtn = document.getElementById('copyInviteBtn');
+
+    // Verificar autenticação
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    console.log('Usuário autenticado:', user);
+    if (authError || !user) {
+      console.error('Erro de autenticação:', authError);
+      showNotification('Você precisa estar logado para acessar o dashboard.', 3000);
+      window.location.href = 'login.html';
+      return;
+    }
+
+    // Subscription para monitorar depósitos aprovados e creditar comissão
+    supabase
+      .channel('deposits-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'deposits',
+          filter: `status=eq.sucesso`,
+        },
+        async (payload) => {
+          const deposit = payload.new;
+          const { data: inviteeData, error: inviteeError } = await supabase
+            .from('users')
+            .select('invited_by, active')
+            .eq('id', deposit.user_id)
+            .single();
+          if (inviteeError || !inviteeData.invited_by) return;
+
+          // Verificar se é o primeiro depósito com sucesso
+          const { data: previousDeposits, error: prevError } = await supabase
+            .from('deposits')
+            .select('id')
+            .eq('user_id', deposit.user_id)
+            .eq('status', 'sucesso')
+            .neq('id', deposit.id);
+          if (prevError || previousDeposits.length > 0) return; // Não é o primeiro
+
+          // Atualizar o status do usuário para ativo
+          if (!inviteeData.active) {
+            const { error: activeError } = await supabase
+              .from('users')
+              .update({ active: true })
+              .eq('id', deposit.user_id);
+            if (activeError) {
+              console.error('Erro ao atualizar status do usuário para ativo:', activeError);
+              return;
+            }
+            // Atualizar a seção de equipe se o usuário atual estiver na seção "equipa"
+            if (document.getElementById('equipa').style.display === 'block') {
+              await initTeamSection();
+            }
+          }
+
+          // Creditar comissão ao convidador
+          const commission = deposit.amount * 0.25;
+          const { data: inviterData, error: inviterError } = await supabase
+            .from('users')
+            .select('balance')
+            .eq('id', inviteeData.invited_by)
+            .single();
+          if (inviterError) {
+            console.error('Erro ao buscar dados do convidador:', inviterError);
+            return;
+          }
+
+          const newBalance = inviterData.balance + commission;
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ balance: newBalance })
+            .eq('id', inviteeData.invited_by);
+          if (updateError) {
+            console.error('Erro ao creditar comissão:', updateError);
+            return;
+          }
+
+          // Atualizar a interface se o usuário atual for o convidador
+          if (inviteeData.invited_by === user.id) {
+            balance = newBalance;
+            await updateBalanceAndLevel();
+            showNotification(`Comissão de ${commission.toLocaleString()} Kz creditada por depósito do convidado!`, 3000);
+          }
+        }
+      )
+      .subscribe();
+
+    // Funções do menu lateral
+    function openMenu() {
+      sidebar.classList.add("active");
+      bodyEl.classList.add("menu-open");
+    }
+    function closeMenu() {
+      sidebar.classList.remove("active");
+      bodyEl.classList.remove("menu-open");
+    }
+    btnMenu.addEventListener("click", () => {
+      sidebar.classList.contains("active") ? closeMenu() : openMenu();
+    });
+    window.addEventListener('click', (e) => {
+      if (!sidebar.classList.contains('active')) return;
+      if (!sidebar.contains(e.target) && !btnMenu.contains(e.target)) closeMenu();
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && sidebar.classList.contains('active')) closeMenu();
+    });
+
+    // Navegação entre seções
+    async function showLoadingAndNavigate(target) {
+      localStorage.setItem('selectedSection', target);
+      document.querySelectorAll('main').forEach(m => {
+        console.log(`Seção ${m.id}: display = ${m.style.display}`);
+        m.style.display = 'none';
+        m.classList.remove('visible');
+      });
+      const targetSection = document.getElementById(target);
+      if (targetSection) {
+        targetSection.style.display = 'block';
+        setTimeout(() => {
+          targetSection.classList.add('visible');
+        }, 10);
+        document.querySelectorAll('.sidebar__nav a').forEach(a => a.classList.remove('active'));
+        const activeLink = document.querySelector(`.sidebar__nav a[data-target="${target}"]`);
+        if (activeLink) activeLink.classList.add('active');
+        // Inicializar seções específicas
+        if (target === 'deposito') {
+          await renderDepositHistory();
+        } else if (target === 'saque') {
+          await renderWithdrawHistory();
+          updateWithdrawIban(); // Atualiza o IBAN na seção de saque
+        } else if (target === 'equipa') {
+          await initTeamSection();
+        }
+        loadingOverlay.classList.remove('active');
+      } else {
+        console.error(`Seção ${target} não encontrada.`);
+        showNotification('Seção não encontrada. Retornando à página inicial.', 3000);
+        localStorage.setItem('selectedSection', 'niveis');
+        document.getElementById('niveis').style.display = 'block';
+        setTimeout(() => {
+          document.getElementById('niveis').classList.add('visible');
+        }, 10);
+        document.querySelector('.sidebar__nav a[data-target="niveis"]').classList.add('active');
+        loadingOverlay.classList.remove('active');
+      }
+    }
+
+    document.querySelectorAll('.sidebar__nav a[data-target]').forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        const target = link.dataset.target;
+        loadingOverlay.classList.add('active');
+        setTimeout(() => showLoadingAndNavigate(target), 300);
+      });
+    });
+
+    document.querySelectorAll('a[data-target="deposito"]').forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        loadingOverlay.classList.add('active');
+        setTimeout(async () => {
+          showLoadingAndNavigate('deposito');
+          await renderDepositHistory();
+        }, 300);
+      });
+    });
+
+    // Exibir seção inicial (Níveis) imediatamente após o login
+    async function initializePage() {
+      console.log('Inicializando página com seção Níveis...');
+      document.querySelectorAll('main').forEach(m => {
+        m.style.display = 'none';
+        m.classList.remove('visible');
+      });
+      const niveisSection = document.getElementById('niveis');
+      niveisSection.style.display = 'block';
+      setTimeout(() => {
+        niveisSection.classList.add('visible');
+      }, 10);
+      document.querySelectorAll('.sidebar__nav a').forEach(a => a.classList.remove('active'));
+      document.querySelector('.sidebar__nav a[data-target="niveis"]').classList.add('active');
+      localStorage.setItem('selectedSection', 'niveis');
+
+      // Renderizar os cartões de níveis imediatamente
+      try {
+        await initUserData();
+        await renderLevelCards();
+      } catch (error) {
+        console.error('Erro ao inicializar dados ou renderizar cartões:', error);
+        showNotification('Erro ao carregar os níveis. Tente novamente mais tarde.', 3000);
+      }
+    }
+
+    // Logout
+    function showLogoutModal() {
+      logoutModal.classList.add("active");
+      logoutConfirm.focus();
+    }
+    function hideLogoutModal() {
+      logoutModal.classList.remove("active");
+    }
+    logoutBtn.addEventListener("click", e => {
+      e.preventDefault();
+      showLogoutModal();
+    });
+    logoutConfirm.addEventListener("click", async () => {
+      loadingOverlay.classList.add("active");
+      await supabase.auth.signOut();
+      localStorage.clear();
+      window.location.href = "login.html";
+    });
+    logoutCancel.addEventListener("click", hideLogoutModal);
+    window.addEventListener('click', (e) => {
+      if (logoutModal.classList.contains('active') && e.target === logoutModal) {
+        hideLogoutModal();
+      }
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && logoutModal.classList.contains('active')) {
+        hideLogoutModal();
+      }
+    });
+
+    // Lógica de Níveis
+    const balanceAmount = document.getElementById('balance-amount');
+    const levelRented = document.getElementById('level-rented');
+    const availableBalance = document.getElementById("available-balance");
+    const withdrawBalanceAmount = document.getElementById("withdraw-balance-amount");
+    let userData = null;
+    let balance = 500.00;
+    let rentedLevel = 0;
+    let rentalTimestamp = 0;
+    let lastIncomeTimestamp = 0;
+    const levels = [
+      { level: 1, value: 5000, daily: 1000, days: 50 },
+      { level: 2, value: 10000, daily: 2000, days: 50 },
+      { level: 3, value: 20000, daily: 4000, days: 50 },
+      { level: 4, value: 40000, daily: 8000, days: 50 },
+      { level: 5, value: 80000, daily: 16000, days: 50 },
+      { level: 6, value: 160000, daily: 32000, days: 50 },
+      { level: 7, value: 320000, daily: 64000, days: 50 },
+      { level: 8, value: 640000, daily: 128000, days: 50 }
+    ];
+
+    async function fetchUserData() {
+      const { data, error } = await supabase
+        .from('users')
+        .select('balance, rented_level, rental_timestamp, last_income_timestamp, username, invite_code, bank_name, iban')
+        .eq('id', user.id)
+        .single();
+      if (error) {
+        console.error('Erro ao buscar dados do usuário:', error);
+        showNotification('Erro ao carregar dados do usuário.', 3000);
+        return null;
+      }
+      console.log('Dados do usuário:', data);
+      return data;
+    }
+
+    async function updateUserData(updates) {
+      const { error } = await supabase
+        .from('users')
+        .update(updates)
+        .eq('id', user.id);
+      if (error) {
+        console.error('Erro ao atualizar dados do usuário:', error);
+        showNotification('Erro ao salvar dados do usuário.', 3000);
+        return false;
+      }
+      return true;
+    }
+
+    async function updateBalanceAndLevel() {
+      balanceAmount.textContent = `${balance.toFixed(2)} Kz`;
+      availableBalance.textContent = `${balance.toFixed(2)} Kz`;
+      withdrawBalanceAmount.textContent = `${balance.toFixed(2)} Kz`;
+      levelRented.textContent = rentedLevel;
+      await updateUserData({ balance, rented_level: rentedLevel, rental_timestamp: rentalTimestamp, last_income_timestamp: lastIncomeTimestamp });
+      updateWithdrawIban(); // Atualiza o IBAN na seção de saque
+    }
+
+    async function checkDailyIncomeAndExpiration() {
+      if (rentedLevel === 0) return;
+      const now = Date.now();
+      const levelData = levels.find(l => l.level === rentedLevel);
+      const MS_IN_DAY = 24 * 60 * 60 * 1000;
+      const daysSinceRental = Math.floor((now - rentalTimestamp) / MS_IN_DAY);
+      if (daysSinceRental >= levelData.days) {
+        rentedLevel = 0;
+        rentalTimestamp = 0;
+        lastIncomeTimestamp = 0;
+        await updateUserData({ rented_level: 0, rental_timestamp: 0, last_income_timestamp: 0 });
+        updateBalanceAndLevel();
+        renderLevelCards();
+        showNotification('O nível alugado expirou após 50 dias. Alugue um novo nível.', 3000);
+        return;
+      }
+      const daysSinceLastIncome = Math.floor((now - lastIncomeTimestamp) / MS_IN_DAY);
+      if (daysSinceLastIncome >= 1) {
+        const dailyIncome = levelData.daily * daysSinceLastIncome;
+        balance += dailyIncome;
+        lastIncomeTimestamp = now;
+        await updateUserData({ balance, last_income_timestamp: lastIncomeTimestamp });
+        updateBalanceAndLevel();
+        renderLevelCards();
+      }
+    }
+
+    async function renderLevelCards() {
+  console.log('Renderizando cartões de níveis...');
+  const container = document.querySelector('.cards-container');
+  container.innerHTML = levels.map(level => `
+    <div class="card ${rentedLevel === level.level ? 'rented' : balance < level.value ? 'disabled' : ''}" data-level="${level.level}">
+      <svg class="card__icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
+        <path fill="currentColor" d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79-4-4-4z"/>
+      </svg>
+      <div class="card__title">Nível ${level.level}</div>
+      <div class="card__info">Investimento: <span>${level.value.toLocaleString()} Kz</span></div>
+      <div class="card__info">Renda Diária: <span>${level.daily.toLocaleString()} Kz</span></div>
+      <div class="card__info">Duração: <span>${level.days} dias</span></div>
+      <a href="#" class="btn">Alugar</a>
+    </div>
+  `).join('');
+
+  document.querySelectorAll('.card .btn').forEach(button => {
+    button.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const card = button.closest('.card');
+      if (card.classList.contains('disabled') || card.classList.contains('rented')) return;
+
+      const level = parseInt(card.dataset.level);
+      const levelData = levels.find(l => l.level === level);
+      if (balance < levelData.value) {
+        showNotification('Saldo insuficiente para alugar este nível.', 3000);
+        return;
+      }
+
+      loadingOverlay.classList.add('active');
+      balance -= levelData.value;
+      rentedLevel = level;
+      rentalTimestamp = Date.now();
+      lastIncomeTimestamp = Date.now();
+      await updateUserData({ balance, rented_level: rentedLevel, rental_timestamp: rentalTimestamp, last_income_timestamp: lastIncomeTimestamp });
+      await updateBalanceAndLevel();
+      await renderLevelCards();
+      loadingOverlay.classList.remove('active');
+      showNotification(`Nível ${level} alugado com sucesso!`, 3000);
+    });
+  });
+}
+
+// Inicializar dados do usuário
+async function initUserData() {
+  userData = await fetchUserData();
+  if (userData) {
+    balance = userData.balance || 500.00;
+    rentedLevel = userData.rented_level || 0;
+    rentalTimestamp = userData.rental_timestamp || 0;
+    lastIncomeTimestamp = userData.last_income_timestamp || 0;
+    await updateBalanceAndLevel();
+    await checkDailyIncomeAndExpiration();
+  }
+}
+
+// Perfil
+const editProfileBtn = document.getElementById('editProfileBtn');
+const usernameInput = document.getElementById('username');
+const inviteCodeInput = document.getElementById('invite-code');
+const bankNameInput = document.getElementById('bank-name');
+const ibanInput = document.getElementById('iban');
+const ibanError = document.getElementById('iban-error');
+
+async function initProfileSection() {
+  userData = await fetchUserData();
+  if (userData) {
+    usernameInput.value = userData.username || '';
+    inviteCodeInput.value = userData.invite_code || '';
+    bankNameInput.value = userData.bank_name || '';
+    ibanInput.value = userData.iban || '';
+  }
+}
+
+editProfileBtn.addEventListener('click', async () => {
+  const bankName = bankNameInput.value.trim();
+  const iban = ibanInput.value.trim();
+
+  if (!bankName || !iban) {
+    showNotification('Por favor, preencha todos os campos.', 3000);
+    return;
+  }
+
+  if (!/^\d{21}$/.test(iban)) {
+    ibanError.classList.add('active');
+    return;
+  } else {
+    ibanError.classList.remove('active');
+  }
+
+  loadingOverlay.classList.add('active');
+  const success = await updateUserData({ bank_name: bankName, iban });
+  loadingOverlay.classList.remove('active');
+  if (success) {
+    showNotification('Perfil atualizado com sucesso!', 3000);
+  }
+});
+
+// Depósito
+const depositAmountInput = document.getElementById('deposit-amount');
+const paymentMethodSelect = document.getElementById('payment-method');
+const proofUploadInput = document.getElementById('proof-upload');
+const proofPreview = document.getElementById('proof-preview');
+const confirmDepositBtn = document.getElementById('confirmDepositBtn');
+
+async function uploadProof(file) {
+  const fileName = `${user.id}_${Date.now()}_${file.name}`;
+  const { error } = await supabase.storage
+    .from('proofs')
+    .upload(`deposits/${fileName}`, file);
+  if (error) {
+    console.error('Erro ao fazer upload do comprovativo:', error);
+    showNotification('Erro ao fazer upload do comprovativo.', 3000);
+    return null;
+  }
+  const { data } = supabase.storage
+    .from('proofs')
+    .getPublicUrl(`deposits/${fileName}`);
+  return data.publicUrl;
+}
+
+proofUploadInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      proofPreview.innerHTML = `<img src="${e.target.result}" alt="Comprovativo" />`;
+    };
+    reader.readAsDataURL(file);
+  } else {
+    proofPreview.innerHTML = '';
+  }
+});
+
+confirmDepositBtn.addEventListener('click', async () => {
+  const amount = parseFloat(depositAmountInput.value);
+  const paymentMethod = paymentMethodSelect.value;
+  const file = proofUploadInput.files[0];
+
+  if (!amount || amount < 5000) {
+    showNotification('O valor mínimo de depósito é 5000 Kz.', 3000);
+    return;
+  }
+
+  if (!paymentMethod) {
+    showNotification('Selecione um método de pagamento.', 3000);
+    return;
+  }
+
+  if (!file) {
+    showNotification('Faça upload do comprovativo.', 3000);
+    return;
+  }
+
+  const currentHour = new Date().getHours();
+  if (currentHour < 9 || currentHour >= 21) {
+    showNotification('Os depósitos só podem ser feitos entre 9h e 21h.', 3000);
+    return;
+  }
+
+  loadingOverlay.classList.add('active');
+  const proofUrl = await uploadProof(file);
+  if (!proofUrl) {
+    loadingOverlay.classList.remove('active');
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from('deposits')
+    .insert({
+      user_id: user.id,
+      amount,
+      payment_method: paymentMethod,
+      proof_url: proofUrl,
+      status: 'pendente'
+    });
+
+  if (error) {
+    console.error('Erro ao registrar depósito:', error);
+    showNotification('Erro ao registrar depósito.', 3000);
+    loadingOverlay.classList.remove('active');
+    return;
+  }
+
+  depositAmountInput.value = '';
+  paymentMethodSelect.value = '';
+  proofUploadInput.value = '';
+  proofPreview.innerHTML = '';
+  await renderDepositHistory();
+  loadingOverlay.classList.remove('active');
+  showNotification('Depósito enviado para análise!', 3000);
+});
+
+async function renderDepositHistory() {
+  const { data: deposits, error } = await supabase
+    .from('deposits')
+    .select('amount, created_at, status')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Erro ao buscar histórico de depósitos:', error);
+    showNotification('Erro ao carregar histórico de depósitos.', 3000);
+    return;
+  }
+
+  const historyTableBody = document.getElementById('history-table-body');
+  historyTableBody.innerHTML = deposits.map(deposit => `
+    <tr>
+      <td>${deposit.amount.toLocaleString()} Kz</td>
+      <td>${new Date(deposit.created_at).toLocaleString()}</td>
+      <td class="status-${deposit.status}">${deposit.status.charAt(0).toUpperCase() + deposit.status.slice(1)}</td>
+    </tr>
+  `).join('');
+
+  const depositHistory = document.getElementById('deposit-history');
+  depositHistory.style.display = deposits.length > 0 ? 'block' : 'none';
+}
+
+// Saque
+const withdrawAmountInput = document.getElementById('withdraw-amount');
+const withdrawIbanInput = document.getElementById('withdraw-iban');
+const withdrawIbanError = document.getElementById('withdraw-iban-error');
+const confirmWithdrawBtn = document.getElementById('confirmWithdrawBtn');
+
+async function updateWithdrawIban() {
+  userData = await fetchUserData();
+  if (userData && userData.iban) {
+    withdrawIbanInput.value = userData.iban;
+  } else {
+    withdrawIbanInput.value = '';
+  }
+}
+
+confirmWithdrawBtn.addEventListener('click', async () => {
+  const amount = parseFloat(withdrawAmountInput.value);
+  const iban = withdrawIbanInput.value.trim();
+
+  if (!amount || amount < 1500) {
+    showNotification('O valor mínimo de saque é 1500 Kz.', 3000);
+    return;
+  }
+
+  if (!iban || !/^\d{21}$/.test(iban)) {
+    withdrawIbanError.classList.add('active');
+    showNotification('Por favor, insira um IBAN válido no perfil.', 3000);
+    return;
+  } else {
+    withdrawIbanError.classList.remove('active');
+  }
+
+  if (amount > balance) {
+    showNotification('Saldo insuficiente para realizar o saque.', 3000);
+    return;
+  }
+
+  const currentHour = new Date().getHours();
+  if (currentHour < 9 || currentHour >= 19) {
+    showNotification('Os saques só podem ser feitos entre 9h e 19h.', 3000);
+    return;
+  }
+
+  loadingOverlay.classList.add('active');
+  const fee = amount * 0.09;
+  const netAmount = amount - fee;
+
+  const { data, error } = await supabase
+    .from('withdrawals')
+    .insert({
+      user_id: user.id,
+      amount,
+      net_amount: netAmount,
+      fee,
+      iban,
+      status: 'pendente'
+    });
+
+  if (error) {
+    console.error('Erro ao registrar saque:', error);
+    showNotification('Erro ao registrar saque.', 3000);
+    loadingOverlay.classList.remove('active');
+    return;
+  }
+
+  balance -= amount;
+  await updateUserData({ balance });
+  await updateBalanceAndLevel();
+  withdrawAmountInput.value = '';
+  await renderWithdrawHistory();
+  loadingOverlay.classList.remove('active');
+  showNotification('Saque enviado para análise!', 3000);
+});
+
+async function renderWithdrawHistory() {
+  const { data: withdrawals, error } = await supabase
+    .from('withdrawals')
+    .select('net_amount, created_at, status')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Erro ao buscar histórico de saques:', error);
+    showNotification('Erro ao carregar histórico de saques.', 3000);
+    return;
+  }
+
+  const withdrawHistoryTableBody = document.getElementById('withdraw-history-table-body');
+  withdrawHistoryTableBody.innerHTML = withdrawals.map(withdrawal => `
+    <tr>
+      <td>${withdrawal.net_amount.toLocaleString()} Kz</td>
+      <td>${new Date(withdrawal.created_at).toLocaleString()}</td>
+      <td class="status-${withdrawal.status}">${withdrawal.status.charAt(0).toUpperCase() + withdrawal.status.slice(1)}</td>
+    </tr>
+  `).join('');
+
+  const withdrawHistory = document.getElementById('withdraw-history');
+  withdrawHistory.style.display = withdrawals.length > 0 ? 'block' : 'none';
+}
+
+// Equipa
+async function initTeamSection() {
+  const { data: members, error: membersError } = await supabase
+    .from('users')
+    .select('email, active')
+    .eq('invited_by', user.id);
+  if (membersError) {
+    console.error('Erro ao buscar membros da equipe:', membersError);
+    showNotification('Erro ao carregar membros da equipe.', 3000);
+    return;
+  }
+
+  const totalMembers = members.length;
+  const activeMembers = members.filter(m => m.active).length;
+  document.getElementById('total-members').textContent = totalMembers;
+  document.getElementById('active-members').textContent = activeMembers;
+
+  const membersTableBody = document.getElementById('members-table-body');
+  membersTableBody.innerHTML = members.map(member => `
+    <tr role="row">
+      <td role="cell">${member.email}</td>
+      <td role="cell" class="status-${member.active ? 'ativo' : 'inativo'}">${member.active ? 'Ativo' : 'Inativo'}</td>
+    </tr>
+  `).join('');
+
+  const inviteUrlInput = document.getElementById('invite-url');
+  inviteUrlInput.value = `${window.location.origin}/signup.html?invite=${userData.invite_code}`;
+}
+
+copyInviteBtn.addEventListener('click', () => {
+  const inviteUrlInput = document.getElementById('invite-url');
+  inviteUrlInput.select();
+  document.execCommand('copy');
+  showNotification('Link de convite copiado!', 3000);
+});
+
+// Inicializar página
+await initializePage();
+await initProfileSection();
+await renderDepositHistory();
+await initTeamSection();
+
+// Atualizar renda diária a cada 5 minutos
+setInterval(checkDailyIncomeAndExpiration, 5 * 60 * 1000);
+});
+  </script>
+</body>
+</html>
