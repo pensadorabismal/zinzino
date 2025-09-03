@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zinzino – Registro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <style>
+    :root {
+      --brand-gradient: linear-gradient(135deg, #8e2de2, #4a00e0);
+      --text: #fff;
+      --overlay: rgba(0,0,0,.22);
+      --maxw: 1100px;
+      --anim-time: 320ms;
+      --anim-ease: cubic-bezier(.2,.9,.25,1);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "Poppins", sans-serif;
+      color: var(--text);
+      background: url("https://i.postimg.cc/sD96Zykj/file-00000000db9861f994c233d10d71c73b.png") no-repeat center/cover fixed;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: var(--overlay);
+      backdrop-filter: blur(1px);
+      z-index: -1;
+    }
+    .register-container {
+      max-width: 400px;
+      width: 90%;
+      background: linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 6px 16px rgba(0,0,0,.3);
+      animation: fadeInUp 1s ease both;
+    }
+    .register__title {
+      font-size: 1.8rem;
+      font-weight: 600;
+      background: var(--brand-gradient);
+      -webkit-background-clip: text;
+      color: transparent;
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    .register__form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .register__form label {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #f5f7fa;
+    }
+    .register__form input {
+      width: 100%;
+      padding: 0.75rem;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.28);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.9rem;
+    }
+    .register__form input:focus {
+      outline: none;
+      border-color: #8e2de2;
+    }
+    .register__form input::placeholder {
+      color: #ccc;
+      opacity: 1;
+    }
+    .error-message {
+      color: #e63946;
+      font-size: 0.8rem;
+      display: none;
+      margin-top: -0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .error-message.active {
+      display: block;
+    }
+    .btn {
+      padding: 0.6rem 1.2rem;
+      background: var(--brand-gradient);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform var(--anim-time) var(--anim-ease);
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+    .register__link {
+      text-align: center;
+      margin-top: 1rem;
+    }
+    .register__link a {
+      color: #8e2de2;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .register__link a:hover {
+      text-decoration: underline;
+    }
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 400;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    #loading-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+    }
+    .spinner circle {
+      stroke: url(#brand-gradient);
+      stroke-width: 5;
+      fill: none;
+    }
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
+      color: #fff;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.2);
+      box-shadow: 0 4px 12px rgba(0,0,0,.3);
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      z-index: 500;
+    }
+    .notification.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @media (max-width: 768px) {
+      .register-container {
+        padding: 1.5rem;
+      }
+      .register__title {
+        font-size: 1.5rem;
+      }
+      .register__form input {
+        font-size: 0.85rem;
+      }
+      .btn {
+        font-size: 0.85rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true">
+    <defs>
+      <linearGradient id="brand-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:#8e2de2" />
+        <stop offset="100%" style="stop-color:#4a00e0" />
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <div id="loading-overlay">
+    <svg class="spinner" viewBox="0 0 50 50" aria-hidden="true">
+      <circle cx="25" cy="25" r="20" stroke-dasharray="62.8 62.8" stroke="url(#brand-gradient)" stroke-width="5" fill="none" />
+    </svg>
+  </div>
+
+  <div class="register-container">
+    <h1 class="register__title">Zinzino – Registro</h1>
+    <form class="register__form">
+      <label for="email">E-mail</label>
+      <input type="email" id="email" name="email" placeholder="Digite seu e-mail" required />
+      <div class="error-message" id="email-error">Por favor, insira um e-mail válido.</div>
+      <label for="phone">Telemóvel</label>
+      <input type="tel" id="phone" name="phone" placeholder="Digite seu número de telemóvel (9 dígitos)" required />
+      <div class="error-message" id="phone-error">O número de telemóvel deve ter exatamente 9 dígitos numéricos.</div>
+      <label for="username">Nome de Usuário</label>
+      <input type="text" id="username" name="username" placeholder="Digite seu nome de usuário" required />
+      <div class="error-message" id="username-error">O nome de usuário deve ter entre 3 e 20 caracteres.</div>
+      <label for="password">Senha</label>
+      <input type="password" id="password" name="password" placeholder="Digite sua senha" required />
+      <div class="error-message" id="password-error">A senha deve ter pelo menos 6 caracteres.</div>
+      <label for="invite-code">Código de Convite (Opcional)</label>
+      <input type="text" id="invite-code" name="invite-code" placeholder="Digite o código de convite" />
+      <div class="error-message" id="invite-code-error">O código de convite fornecido é inválido.</div>
+      <button type="submit" class="btn" id="registerBtn">Registrar</button>
+    </form>
+    <div class="register__link">
+      <p>Já tem uma conta? <a href="login.html">Faça login</a></p>
+    </div>
+  </div>
+
+  <script>
+    // AVISO: Armazenar senhas em texto puro na tabela 'users' é EXTREMAMENTE INSEGURO.
+    // O Supabase Auth já armazena senhas de forma segura (criptografadas) na tabela interna 'auth.users'.
+    // Considere remover a coluna 'senha' da tabela 'users' e usar apenas o Supabase Auth para autenticação.
+
+    // Função para inicializar o Supabase após o carregamento do script
+    function initializeSupabase() {
+      if (typeof window.supabase === 'undefined') {
+        console.error('Erro: Biblioteca Supabase não foi carregada.');
+        showNotification('Erro ao carregar a biblioteca Supabase. Tente novamente mais tarde.', 3000);
+        return null;
+      }
+
+      const supabaseUrl = 'https://ryqyjpzzozpmgvkaciwf.supabase.co';
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5cXlqcHp6b3pwbWd2a2FjaXdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0NzUxNDYsImV4cCI6MjA3MjA1MTE0Nn0.b_KLueY1HyakuX_QpLoepcgLkh22Fr9MPJ_Qhf8h_Mw';
+      return window.supabase.createClient(supabaseUrl, supabaseKey);
+    }
+
+    // Função para exibir notificações estilizadas
+    function showNotification(message, duration = 3000) {
+      const notification = document.createElement('div');
+      notification.className = 'notification';
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      setTimeout(() => {
+        notification.classList.add('active');
+        setTimeout(() => {
+          notification.classList.remove('active');
+          setTimeout(() => notification.remove(), 300);
+        }, duration);
+      }, 10);
+    }
+
+    // Função para extrair o parâmetro 'invite' da URL
+    function getInviteCodeFromUrl() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('invite') || '';
+    }
+
+    // Aguarda o carregamento do documento antes de inicializar
+    document.addEventListener('DOMContentLoaded', () => {
+      const supabase = initializeSupabase();
+      if (!supabase) return;
+
+      const registerBtn = document.getElementById('registerBtn');
+      const emailInput = document.getElementById('email');
+      const phoneInput = document.getElementById('phone');
+      const usernameInput = document.getElementById('username');
+      const passwordInput = document.getElementById('password');
+      const inviteCodeInput = document.getElementById('invite-code');
+      const emailError = document.getElementById('email-error');
+      const phoneError = document.getElementById('phone-error');
+      const usernameError = document.getElementById('username-error');
+      const passwordError = document.getElementById('password-error');
+      const inviteCodeError = document.getElementById('invite-code-error');
+      const loadingOverlay = document.getElementById('loading-overlay');
+
+      // Preencher automaticamente o campo invite-code com o código da URL
+      const inviteCodeFromUrl = getInviteCodeFromUrl();
+      if (inviteCodeFromUrl) {
+        inviteCodeInput.value = inviteCodeFromUrl;
+      }
+
+      async function validateInviteCode(code) {
+        if (!code) return true; // Código de convite é opcional
+        const { data, error } = await supabase
+          .from('users')
+          .select('id')
+          .eq('invite_code', code)
+          .single();
+        return !error && data;
+      }
+
+      async function checkEmailExists(email) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('id')
+          .eq('email', email)
+          .single();
+        return !error && data;
+      }
+
+      async function checkPhoneExists(phone) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('id')
+          .eq('phone', phone)
+          .single();
+        return !error && data;
+      }
+
+      async function checkUsernameExists(username) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('id')
+          .eq('username', username)
+          .single();
+        return !error && data;
+      }
+
+      async function generateUniqueInviteCode() {
+        let code;
+        let isUnique = false;
+        while (!isUnique) {
+          code = Math.random().toString(36).substr(2, 8).toUpperCase();
+          const { data, error } = await supabase
+            .from('users')
+            .select('id')
+            .eq('invite_code', code)
+            .single();
+          if (!data || error) isUnique = true;
+        }
+        return code;
+      }
+
+      async function getReferrerId(inviteCode) {
+        if (!inviteCode) return null;
+        const { data, error } = await supabase
+          .from('users')
+          .select('id')
+          .eq('invite_code', inviteCode)
+          .single();
+        if (error || !data) return null;
+        return data.id;
+      }
+
+      registerBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const email = emailInput.value.trim();
+        const phone = phoneInput.value.trim();
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value.trim();
+        const inviteCode = inviteCodeInput.value.trim() || null;
+
+        let hasError = false;
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          emailError.textContent = 'Por favor, insira um e-mail válido.';
+          emailError.classList.add('active');
+          hasError = true;
+        } else if (await checkEmailExists(email)) {
+          emailError.textContent = 'Este e-mail já está registrado.';
+          emailError.classList.add('active');
+          hasError = true;
+        } else {
+          emailError.classList.remove('active');
+        }
+
+        if (!/^[0-9]{9}$/.test(phone)) {
+          phoneError.textContent = 'O número de telemóvel deve ter exatamente 9 dígitos numéricos.';
+          phoneError.classList.add('active');
+          hasError = true;
+        } else if (await checkPhoneExists(phone)) {
+          phoneError.textContent = 'Este número de telemóvel já está registrado.';
+          phoneError.classList.add('active');
+          hasError = true;
+        } else {
+          phoneError.classList.remove('active');
+        }
+
+        if (username.length < 3 || username.length > 20) {
+          usernameError.textContent = 'O nome de usuário deve ter entre 3 e 20 caracteres.';
+          usernameError.classList.add('active');
+          hasError = true;
+        } else if (await checkUsernameExists(username)) {
+          usernameError.textContent = 'Este nome de usuário já está em uso.';
+          usernameError.classList.add('active');
+          hasError = true;
+        } else {
+          usernameError.classList.remove('active');
+        }
+
+        if (password.length < 6) {
+          passwordError.classList.add('active');
+          hasError = true;
+        } else {
+          passwordError.classList.remove('active');
+        }
+
+        if (inviteCode && !(await validateInviteCode(inviteCode))) {
+          inviteCodeError.textContent = 'O código de convite fornecido é inválido.';
+          inviteCodeError.classList.add('active');
+          hasError = true;
+        } else {
+          inviteCodeError.classList.remove('active');
+        }
+
+        if (hasError) return;
+
+        loadingOverlay.classList.add('active');
+        try {
+          const { data: authData, error: authError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: { username }
+            }
+          });
+          if (authError) {
+            if (authError.message.includes('User already registered')) {
+              emailError.textContent = 'Este e-mail já está registrado.';
+              emailError.classList.add('active');
+            }
+            throw new Error(authError.message);
+          }
+
+          const newInviteCode = await generateUniqueInviteCode();
+          const invitedBy = await getReferrerId(inviteCode);
+
+          const userData = {
+            id: authData.user.id,
+            email,
+            phone,
+            username,
+            senha: password, // AVISO: Armazenar a senha em texto puro é INSEGURO
+            balance: 500.00,
+            rented_level: 0,
+            rental_timestamp: 0,
+            last_income_timestamp: 0,
+            created_at: new Date().toISOString(),
+            invite_code: newInviteCode,
+            invited_by: invitedBy,
+            is_active: null
+          };
+
+          const { error: dbError } = await supabase
+            .from('users')
+            .insert(userData);
+          if (dbError) {
+            console.error('Erro ao inserir na tabela users:', dbError);
+            throw new Error('Falha ao salvar dados do usuário: ' + dbError.message);
+          }
+
+          showNotification('Registro concluído com sucesso! Faça login para continuar.', 3000);
+          setTimeout(() => {
+            window.location.href = 'login.html';
+          }, 3300);
+        } catch (error) {
+          console.error('Erro no registro:', error);
+          showNotification('Erro ao registrar: ' + error.message, 3000);
+        } finally {
+          loadingOverlay.classList.remove('active');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
