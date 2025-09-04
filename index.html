@@ -1244,7 +1244,7 @@
         console.error('Erro ao buscar código de convite:', userError);
         return;
       }
-      const inviteUrl = `${window.location.origin}/registro.html?invite=${userData.invite_code}`;
+      const inviteUrl = `${window.location.origin}/signup.html?invite=${userData.invite_code}`;
       document.getElementById('invite-url').value = inviteUrl;
 
       const { data: members, error: membersError } = await supabase
