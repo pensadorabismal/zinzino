@@ -885,13 +885,14 @@
               if (balance >= level.value) {
                 loadingOverlay.classList.add('active');
                 try {
+                  const now = Date.now();
                   const { error } = await supabase
                     .from('users')
                     .update({
                       balance: balance - level.value,
                       rented_level: level.level,
-                      rental_timestamp: new Date().toISOString(),
-                      last_income_timestamp: new Date().toISOString()
+                      rental_timestamp: now,
+                      last_income_timestamp: now
                     })
                     .eq('id', user.id);
                   if (error) throw error;
