@@ -27,7 +27,7 @@
     body::before { content: ""; position: fixed; inset: 0; background: var(--overlay); backdrop-filter: blur(1px); z-index: -1; }
     header { position: fixed; top: 0; left: 0; right: 0; background: rgba(0,0,0,.55); backdrop-filter: blur(6px); border-bottom: 1px solid rgba(255,255,255,.12); z-index: 100; }
     .header__inner { max-width: var(--maxw); margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: .9rem .75rem; }
-    .logo { font-size: 30px; letter-spacing: .18em; font-weight: 600; background: var(--brand-gradient); -webkit-background-clip: text; color: transparent; }
+    .logo { font-size: 30px; letter-spacing: .18em; font-weight: 600; background: var(--brand-gradient); background-clip: text; color: transparent; }
     .menu-toggle { width: var(--btn-size); height: var(--btn-size); background: rgba(255,255,255,.1); border: none; border-radius: 10px; cursor: pointer; }
     .menu-toggle:hover { background: rgba(255,255,255,.18); transform: scale(1.03); }
     .menu-toggle svg { width: 22px; height: 22px; display: block; }
@@ -51,7 +51,7 @@
     #logout-modal { position: fixed; inset: 0; background: rgba(0,0,0,.8); display: none; justify-content: center; align-items: center; z-index: 500; }
     #logout-modal.active { display: flex; }
     .logout-modal__content { background: linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.06)); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 1.5rem; max-width: 400px; width: 90%; box-shadow: 0 6px 16px rgba(0,0,0,.3); text-align: center; }
-    .logout-modal__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); -webkit-background-clip: text; color: transparent; margin-bottom: 1rem; }
+    .logout-modal__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); background-clip: text; color: transparent; margin-bottom: 1rem; }
     .logout-modal__message { font-size: 1rem; color: #f5f7fa; margin-bottom: 1.5rem; }
     .logout-modal__buttons { display: flex; gap: 1rem; justify-content: center; }
     .logout-modal__btn { padding: .6rem 1.2rem; border-radius: 8px; font-size: .95rem; font-weight: 500; color: #fff; border: none; cursor: pointer; transition: transform .25s ease; }
@@ -79,8 +79,11 @@
     #niveis .card.disabled { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.08); color: rgba(255,255,255,.4); cursor: not-allowed; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,.15); }
     #niveis .card.rented .btn { background: linear-gradient(135deg, #28a745, #1d7a34); color: #fff; cursor: default; pointer-events: none; box-shadow: none; }
     #niveis .card.disabled .btn { background: rgba(255,255,255,.08); color: rgba(255,255,255,.4); cursor: not-allowed; }
-    #niveis .card__icon { width: 40px; height: 40px; margin: 0 auto .75rem; fill: #fff; opacity: .9; }
-    #niveis .card__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); -webkit-background-clip: text; color: transparent; margin-bottom: .75rem; }
+    #niveis .card__icon { width: 48px; height: 48px; margin: 0 auto 1rem; fill: #fff; opacity: 0.9; transition: transform 0.3s ease, opacity 0.3s ease; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3)); }
+    #niveis .card:hover .card__icon { transform: scale(1.1) rotate(5deg); opacity: 1; filter: drop-shadow(0 4px 8px rgba(142, 45, 226, 0.5)); }
+    #niveis .card.rented .card__icon { animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+    #niveis .card__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); background-clip: text; color: transparent; margin-bottom: .75rem; }
     #niveis .card__info { font-size: .9rem; font-weight: 400; color: #f5f7fa; margin-bottom: .5rem; }
     #niveis .card__info span { color: #fff; font-weight: 600; }
     #niveis .card__timer { font-size: .85rem; font-weight: 400; color: #f5f7fa; margin-top: .75rem; background: rgba(255,255,255,.1); padding: .5rem; border-radius: 8px; }
@@ -91,7 +94,7 @@
     .profile h1 { font-size: clamp(28px, 4vw, 42px); margin-bottom: 1rem; text-align: center; }
     .profile__form { display: flex; flex-direction: column; gap: 1rem; }
     .profile__card { background: rgba(255,255,255,.08); padding: 1.5rem; border-radius: 16px; box-shadow: 0 6px 16px rgba(0,0,0,.2); }
-    .profile__card__title { font-size: 1.2rem; font-weight: 600; background: var(--brand-gradient); -webkit-background-clip: text; color: transparent; text-align: center; margin-bottom: 1rem; }
+    .profile__card__title { font-size: 1.2rem; font-weight: 600; background: var(--brand-gradient); background-clip: text; color: transparent; text-align: center; margin-bottom: 1rem; }
     .profile__card label { display: block; margin-bottom: .5rem; }
     .profile__card input { width: 100%; padding: .75rem; margin-bottom: .75rem; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.28); border-radius: 8px; color: #fff; }
     .btn.edit-mode { background: linear-gradient(135deg, #28a745, #1d7a34); }
@@ -104,7 +107,7 @@
     .deposit__form { display: flex; flex-direction: column; gap: 1rem; }
     .deposit__card { background: linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.06)); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 1.5rem; box-shadow: 0 6px 16px rgba(0,0,0,.2); transition: transform .3s ease, box-shadow .3s ease; }
     .deposit__card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,.3); }
-    .deposit__card__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); -webkit-background-clip: text; color: transparent; margin-bottom: 1rem; text-align: center; }
+    .deposit__card__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); background-clip: text; color: transparent; margin-bottom: 1rem; text-align: center; }
     .deposit__card__icon { width: 40px; height: 40px; margin: 0 auto .75rem; fill: #fff; opacity: .9; }
     .deposit__card label { display: block; font-size: 14px; font-weight: 500; margin-bottom: .5rem; color: #f5f7fa; }
     .deposit__card input, .deposit__card select { width: 100%; padding: .75rem; margin-bottom: .75rem; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.28); border-radius: 8px; color: #fff; font-size: 14px; }
@@ -117,7 +120,7 @@
     .proof-preview img { max-width: 300px; width: 100%; height: auto; border-radius: 8px; border: 1px solid rgba(255,255,255,.18); }
     .deposit__info { background: linear-gradient(145deg, rgba(255,255,255,.15), rgba(255,255,255,.08)); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 1.5rem; box-shadow: 0 6px 16px rgba(0,0,0,.2); transition: transform .3s ease, box-shadow .3s ease; margin-bottom: 1rem; }
     .deposit__info:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,.3); }
-    .deposit__info__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); -webkit-background-clip: text; color: transparent; margin-bottom: 1rem; text-align: center; }
+    .deposit__info__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); background-clip: text; color: transparent; margin-bottom: 1rem; text-align: center; }
     .deposit__info__icon { width: 40px; height: 40px; margin: 0 auto .75rem; fill: #fff; opacity: .9; }
     .deposit__info__content { font-size: 14px; color: #f5f7fa; }
     .deposit__info__content p { margin-bottom: .5rem; }
@@ -141,7 +144,7 @@
     .withdraw__form { display: flex; flex-direction: column; gap: 1rem; }
     .withdraw__card { background: linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.06)); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 1.5rem; box-shadow: 0 6px 16px rgba(0,0,0,.2); transition: transform .3s ease, box-shadow .3s ease; }
     .withdraw__card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,.3); }
-    .withdraw__card__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); -webkit-background-clip: text; color: transparent; margin-bottom: 1rem; text-align: center; }
+    .withdraw__card__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); background-clip: text; color: transparent; margin-bottom: 1rem; text-align: center; }
     .withdraw__card__icon { width: 40px; height: 40px; margin: 0 auto .75rem; fill: #fff; opacity: .9; }
     .withdraw__card label { display: block; font-size: 14px; font-weight: 500; margin-bottom: .5rem; color: #f5f7fa; }
     .withdraw__card input { width: 100%; padding: .75rem; margin-bottom: .75rem; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.28); border-radius: 8px; color: #fff; font-size: 14px; }
@@ -152,7 +155,7 @@
     .error-message.active { display: block; }
     .withdraw__balance { background: linear-gradient(145deg, rgba(255,255,255,.15), rgba(255,255,255,.08)); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 1.5rem; box-shadow: 0 6px 16px rgba(0,0,0,.2); transition: transform .3s ease, box-shadow .3s ease; margin-bottom: 1rem; }
     .withdraw__balance:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,.3); }
-    .withdraw__balance__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); -webkit-background-clip: text; color: transparent; margin-bottom: 1rem; text-align: center; }
+    .withdraw__balance__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); background-clip: text; color: transparent; margin-bottom: 1rem; text-align: center; }
     .withdraw__balance__icon { width: 40px; height: 40px; margin: 0 auto .75rem; fill: #fff; opacity: .9; }
     .withdraw__balance__content { font-size: 14px; color: #f5f7fa; }
     .withdraw__balance__content p { margin-bottom: .5rem; }
@@ -171,7 +174,7 @@
     .team h1 { font-size: clamp(28px, 4vw, 42px); margin-bottom: 0.5rem; }
     .team__info { background: linear-gradient(145deg, rgba(255,255,255,.15), rgba(255,255,255,.08)); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 1.5rem; box-shadow: 0 6px 16px rgba(0,0,0,.2); transition: transform .3s ease, box-shadow .3s ease; margin-bottom: 1rem; }
     .team__info:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,.3); }
-    .team__info__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); -webkit-background-clip: text; color: transparent; margin-bottom: 1rem; text-align: center; }
+    .team__info__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); background-clip: text; color: transparent; margin-bottom: 1rem; text-align: center; }
     .team__info__icon { width: 40px; height: 40px; margin: 0 auto .75rem; fill: #fff; opacity: .9; }
     .team__info__content { font-size: 14px; color: #f5f7fa; }
     .team__info__content p { margin-bottom: .5rem; }
@@ -196,7 +199,7 @@
     .about h1 { font-size: clamp(28px, 4vw, 42px); margin-bottom: 0.5rem; }
     .about__info { background: linear-gradient(145deg, rgba(255,255,255,.15), rgba(255,255,255,.08)); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 1.5rem; box-shadow: 0 6px 16px rgba(0,0,0,.2); transition: transform .3s ease, box-shadow .3s ease; margin-bottom: 1rem; }
     .about__info:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,.3); }
-    .about__info__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); -webkit-background-clip: text; color: transparent; margin-bottom: 1rem; text-align: center; }
+    .about__info__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); background-clip: text; color: transparent; margin-bottom: 1rem; text-align: center; }
     .about__info__icon { width: 40px; height: 40px; margin: 0 auto .75rem; fill: #fff; opacity: .9; }
     .about__info__content { font-size: 14px; color: #f5f7fa; }
     .about__info__content p { margin-bottom: .5rem; }
@@ -250,6 +253,10 @@
         <stop offset="0%" style="stop-color:#8e2de2" />
         <stop offset="100%" style="stop-color:#4a00e0" />
       </linearGradient>
+      <symbol id="trophy-icon" viewBox="0 0 24 24">
+        <path fill="currentColor" d="M18 2h-2V1H8v1H6a2 2 0 0 0-2 2v1h-.586a1 1 0 0 0-.707 1.707l1.414 1.414A1 1 0 0 0 5 8h3v12h2v2h4v-2h2V8h3a1 1 0 0 0 .879-.879l1.414-1.414A1 1 0 0 0 20.586 5H20V4a2 2 0 0 0-2-2zm-2 6H8v10h8V8z"/>
+        <path fill="url(#brand-gradient)" d="M16 8H8v10h8V8z"/>
+      </symbol>
     </defs>
   </svg>
   <div id="loading-overlay">
@@ -341,7 +348,7 @@
           <p><strong>Saldo Disponível:</strong> <span id="available-balance">0.00</span> Kz</p>
           <p>1. Valor mínimo: 5000 Kz.</p>
           <p>2. Os depósitos devem ser feitos no período das 9h às 21h.</p>
-          <p>3. O usuário deve selecionar o banco correspondente para efetuar o depósito. No entanto, se não haver o banco correspondente, deve escolher o método Pagamento por Referência.</p>
+          <p>3. O usuário deve selecionar o banco correspondente para efetuar o depósito. No entanto, se não houver o banco correspondente, deve escolher o método Pagamento por Referência.</p>
           <p>4. Os depósitos são processados em até 15 minutos.</p>
         </div>
       </div>
@@ -764,6 +771,7 @@
       logoutModal.classList.add("active");
       logoutConfirm.focus();
     }
+        // Função para esconder o modal de logout
     function hideLogoutModal() {
       logoutModal.classList.remove("active");
     }
@@ -808,248 +816,280 @@
       { level: 5, value: 80000, daily: 16000, days: 50 },
       { level: 6, value: 160000, daily: 32000, days: 50 },
       { level: 7, value: 320000, daily: 64000, days: 50 },
-      { level: 8, value: 640000, daily: 128000, days: 50 }
+      { level: 8, value: 640000, daily: 128000, days: 50 },
     ];
 
-    async function fetchUserData() {
-      const { data, error } = await supabase
-        .from('users')
-        .select('balance, rented_level, rental_timestamp, last_income_timestamp, username, invite_code, bank_name, iban')
-        .eq('id', user.id)
-        .single();
-      if (error) {
-        console.error('Erro ao buscar dados do usuário:', error);
-        showNotification('Erro ao carregar dados do usuário.', 3000);
-        return null;
+    async function initUserData() {
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('balance, rented_level, rental_timestamp, last_income_timestamp, username, invite_code, bank_name, iban, invited_by, active')
+          .eq('id', user.id)
+          .single();
+        if (error) throw error;
+        userData = data;
+        balance = data.balance || 500.00;
+        rentedLevel = data.rented_level || 0;
+        rentalTimestamp = data.rental_timestamp || 0;
+        lastIncomeTimestamp = data.last_income_timestamp || 0;
+        await updateBalanceAndLevel();
+        await updateProfileSection();
+        await updateWithdrawIban();
+        await initTeamSection();
+      } catch (error) {
+        console.error('Erro ao carregar dados do usuário:', error);
+        showNotification('Erro ao carregar dados do usuário. Tente novamente.', 3000);
       }
-      console.log('Dados do usuário:', data);
-      return data;
-    }
-
-    async function updateUserData(updates) {
-      const { error } = await supabase
-        .from('users')
-        .update(updates)
-        .eq('id', user.id);
-      if (error) {
-        console.error('Erro ao atualizar dados do usuário:', error);
-        showNotification('Erro ao salvar dados do usuário.', 3000);
-        return false;
-      }
-      return true;
     }
 
     async function updateBalanceAndLevel() {
-      balanceAmount.textContent = `${balance.toFixed(2)} Kz`;
-      availableBalance.textContent = `${balance.toFixed(2)} Kz`;
-      withdrawBalanceAmount.textContent = `${balance.toFixed(2)} Kz`;
-      levelRented.textContent = rentedLevel;
-      await updateUserData({ balance, rented_level: rentedLevel, rental_timestamp: rentalTimestamp, last_income_timestamp: lastIncomeTimestamp });
-      updateWithdrawIban(); // Atualiza o IBAN na seção de saque
-      // Atualizar o temporizador no cartão alugado
-      if (rentedLevel > 0) {
-        updateTimerDisplay();
-      }
+      balanceAmount.textContent = balance.toLocaleString('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' Kz';
+      levelRented.textContent = rentedLevel || 'Nenhum';
+      availableBalance.textContent = balance.toLocaleString('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      withdrawBalanceAmount.textContent = balance.toLocaleString('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-        // Função para formatar o tempo restante em HH:MM:SS
-    function formatTimeRemaining(ms) {
-      const totalSeconds = Math.floor(ms / 1000);
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
-      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    }
+    async function renderLevelCards() {
+      const cardsContainer = document.querySelector('#niveis .cards-container');
+      cardsContainer.innerHTML = '';
+      try {
+        const { data: userLevelData, error: levelError } = await supabase
+          .from('users')
+          .select('rented_level, rental_timestamp')
+          .eq('id', user.id)
+          .single();
+        if (levelError) throw levelError;
 
-    // Função para atualizar o temporizador no cartão alugado
-    function updateTimerDisplay() {
-      if (rentedLevel === 0) return;
-      const level = levels.find(l => l.level === rentedLevel);
-      if (!level) return;
-      const now = Date.now();
-      const endTime = rentalTimestamp + (level.days * 24 * 60 * 60 * 1000);
-      const timeRemaining = endTime - now;
-      if (timeRemaining <= 0) {
-        rentedLevel = 0;
-        rentalTimestamp = 0;
-        clearInterval(timerInterval);
-        timerInterval = null;
-        updateBalanceAndLevel();
-        renderLevelCards();
-        return;
-      }
-      const cards = document.querySelectorAll('.card');
-      cards.forEach(card => {
-        if (parseInt(card.dataset.level) === rentedLevel) {
-          const timer = card.querySelector('.card__timer');
-          if (timer) {
-            timer.textContent = `Tempo restante: ${formatTimeRemaining(timeRemaining)}`;
+        rentedLevel = userLevelData.rented_level || 0;
+        rentalTimestamp = userLevelData.rental_timestamp || 0;
+
+        levels.forEach(level => {
+          const isCurrentLevel = rentedLevel === level.level;
+          const isDisabled = balance < level.value || (rentedLevel !== 0 && rentedLevel !== level.level);
+          const card = document.createElement('div');
+          card.className = `card ${isCurrentLevel ? 'rented' : ''} ${isDisabled ? 'disabled' : ''}`;
+          card.innerHTML = `
+            <svg class="card__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <use xlink:href="#trophy-icon"></use>
+            </svg>
+            <div class="card__title">Nível ${level.level}</div>
+            <p class="card__info">Investimento: <span>${level.value.toLocaleString()} Kz</span></p>
+            <p class="card__info">Renda Diária: <span>${level.daily.toLocaleString()} Kz</span></p>
+            <p class="card__info">Duração: <span>${level.days} dias</span></p>
+            ${isCurrentLevel ? `<p class="card__timer">Tempo restante: Calculando...</p>` : ''}
+            <a href="#" class="btn">${isCurrentLevel ? 'Alugado' : 'Alugar'}</a>
+          `;
+          if (!isCurrentLevel && !isDisabled) {
+            card.querySelector('.btn').addEventListener('click', async (e) => {
+              e.preventDefault();
+              if (balance >= level.value) {
+                loadingOverlay.classList.add('active');
+                try {
+                  const { error } = await supabase
+                    .from('users')
+                    .update({
+                      balance: balance - level.value,
+                      rented_level: level.level,
+                      rental_timestamp: new Date().toISOString(),
+                      last_income_timestamp: new Date().toISOString()
+                    })
+                    .eq('id', user.id);
+                  if (error) throw error;
+                  balance -= level.value;
+                  rentedLevel = level.level;
+                  rentalTimestamp = new Date().toISOString();
+                  lastIncomeTimestamp = new Date().toISOString();
+                  await updateBalanceAndLevel();
+                  await renderLevelCards();
+                  showNotification(`Nível ${level.level} alugado com sucesso!`, 3000);
+                } catch (error) {
+                  console.error('Erro ao alugar nível:', error);
+                  showNotification('Erro ao alugar nível. Tente novamente.', 3000);
+                } finally {
+                  loadingOverlay.classList.remove('active');
+                }
+              } else {
+                showNotification('Saldo insuficiente para alugar este nível.', 3000);
+              }
+            });
+          }
+          cardsContainer.appendChild(card);
+        });
+
+        if (rentedLevel > 0) {
+          const levelData = levels.find(l => l.level === rentedLevel);
+          if (levelData) {
+            updateLevelTimer(levelData);
           }
         }
-      });
-    }
-
-    // Função para calcular e creditar renda diária
-    async function creditDailyIncome() {
-      if (rentedLevel === 0) return;
-      const level = levels.find(l => l.level === rentedLevel);
-      if (!level) return;
-      const now = Date.now();
-      const timeSinceLastIncome = now - lastIncomeTimestamp;
-      const oneDayMs = 24 * 60 * 60 * 1000;
-      if (timeSinceLastIncome >= oneDayMs) {
-        const daysElapsed = Math.floor(timeSinceLastIncome / oneDayMs);
-        const income = level.daily * daysElapsed;
-        balance += income;
-        lastIncomeTimestamp = now - (timeSinceLastIncome % oneDayMs);
-        await updateBalanceAndLevel();
-        showNotification(`Renda diária de ${income.toLocaleString()} Kz creditada!`, 3000);
+      } catch (error) {
+        console.error('Erro ao renderizar cartões:', error);
+        showNotification('Erro ao carregar níveis. Tente novamente.', 3000);
       }
     }
 
-    // Função para renderizar cartões de níveis
-    async function renderLevelCards() {
-      const container = document.querySelector('.cards-container');
-      container.innerHTML = '';
-      const now = Date.now();
-      const isLevelRented = rentedLevel > 0 && (rentalTimestamp + (levels[rentedLevel - 1].days * 24 * 60 * 60 * 1000)) > now;
+    function updateLevelTimer(level) {
+      if (timerInterval) clearInterval(timerInterval);
+      const rentalDate = new Date(rentalTimestamp);
+      const endDate = new Date(rentalDate.getTime() + level.days * 24 * 60 * 60 * 1000);
+      const cardTimer = document.querySelector('.card.rented .card__timer');
+      if (!cardTimer) return;
 
-      levels.forEach(level => {
-        const canAfford = balance >= level.value;
-        const isCurrentLevel = level.level === rentedLevel && isLevelRented;
-        const isDisabled = level.level < rentedLevel || (level.level > rentedLevel && !canAfford) || (isLevelRented && level.level !== rentedLevel);
-
-        const card = document.createElement('div');
-        card.className = `card ${isDisabled ? 'disabled' : ''} ${isCurrentLevel ? 'rented' : ''}`;
-        card.dataset.level = level.level;
-        card.innerHTML = `
-          <svg class="card__icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79-4-4-4z"/>
-          </svg>
-          <div class="card__title">Nível ${level.level}</div>
-          <p class="card__info">Investimento: <span>${level.value.toLocaleString()} Kz</span></p>
-          <p class="card__info">Renda Diária: <span>${level.daily.toLocaleString()} Kz</span></p>
-          <p class="card__info">Duração: <span>${level.days} dias</span></p>
-          ${isCurrentLevel ? `<p class="card__timer">Tempo restante: Calculando...</p>` : ''}
-          <a href="#" class="btn">${isCurrentLevel ? 'Alugado' : 'Alugar'}</a>
-        `;
-
-        if (!isDisabled && !isCurrentLevel) {
-          card.querySelector('.btn').addEventListener('click', async e => {
-            e.preventDefault();
-            if (balance < level.value) {
-              showNotification('Saldo insuficiente para alugar este nível.', 3000);
-              return;
-            }
-            loadingOverlay.classList.add('active');
-            balance -= level.value;
-            rentedLevel = level.level;
-            rentalTimestamp = Date.now();
-            lastIncomeTimestamp = Date.now();
-            await updateBalanceAndLevel();
+      async function updateTimer() {
+        const now = new Date();
+        const timeDiff = endDate - now;
+        if (timeDiff <= 0) {
+          clearInterval(timerInterval);
+          cardTimer.textContent = 'Tempo restante: Expirado';
+          try {
+            const { error } = await supabase
+              .from('users')
+              .update({ rented_level: 0, rental_timestamp: null, last_income_timestamp: null })
+              .eq('id', user.id);
+            if (error) throw error;
+            rentedLevel = 0;
+            rentalTimestamp = 0;
+            lastIncomeTimestamp = 0;
             await renderLevelCards();
-            loadingOverlay.classList.remove('active');
-            showNotification(`Nível ${level.level} alugado com sucesso!`, 3000);
-            // Iniciar o temporizador
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-              updateTimerDisplay();
-              creditDailyIncome();
-            }, 1000);
-          });
+            showNotification('O período de aluguel do nível expirou.', 3000);
+          } catch (error) {
+            console.error('Erro ao expirar nível:', error);
+            showNotification('Erro ao processar expiração do nível.', 3000);
+          }
+          return;
         }
-        container.appendChild(card);
+
+        const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+        cardTimer.textContent = `Tempo restante: ${days}d ${hours}h ${minutes}m ${seconds}s`;
+
+        // Verificar se passou 24 horas desde o último crédito
+        const lastIncome = new Date(lastIncomeTimestamp);
+        const timeSinceLastIncome = now - lastIncome;
+        if (timeSinceLastIncome >= 24 * 60 * 60 * 1000) {
+          try {
+            balance += level.daily;
+            lastIncomeTimestamp = now.toISOString();
+            const { error } = await supabase
+              .from('users')
+              .update({ balance: balance, last_income_timestamp: lastIncomeTimestamp })
+              .eq('id', user.id);
+            if (error) throw error;
+            await updateBalanceAndLevel();
+            showNotification(`Renda diária de ${level.daily.toLocaleString()} Kz creditada!`, 3000);
+          } catch (error) {
+            console.error('Erro ao creditar renda diária:', error);
+            showNotification('Erro ao creditar renda diária.', 3000);
+          }
+        }
+      }
+
+      updateTimer();
+      timerInterval = setInterval(updateTimer, 1000);
+    }
+
+    // Perfil
+    async function updateProfileSection() {
+      const usernameInput = document.getElementById('username');
+      const inviteCodeInput = document.getElementById('invite-code');
+      const bankNameInput = document.getElementById('bank-name');
+      const ibanInput = document.getElementById('iban');
+      const ibanError = document.getElementById('iban-error');
+      const editProfileBtn = document.getElementById('editProfileBtn');
+
+      usernameInput.value = userData.username || '';
+      inviteCodeInput.value = userData.invite_code || '';
+      bankNameInput.value = userData.bank_name || '';
+      ibanInput.value = userData.iban || '';
+
+      editProfileBtn.addEventListener('click', async () => {
+        const bankName = bankNameInput.value.trim();
+        const iban = ibanInput.value.trim();
+
+        if (iban.length !== 21 || !/^\d{21}$/.test(iban)) {
+          ibanError.classList.add('active');
+          return;
+        } else {
+          ibanError.classList.remove('active');
+        }
+
+        loadingOverlay.classList.add('active');
+        try {
+          const { error } = await supabase
+            .from('users')
+            .update({ bank_name: bankName, iban: iban })
+            .eq('id', user.id);
+          if (error) throw error;
+          userData.bank_name = bankName;
+          userData.iban = iban;
+          showNotification('Perfil atualizado com sucesso!', 3000);
+        } catch (error) {
+          console.error('Erro ao atualizar perfil:', error);
+          showNotification('Erro ao atualizar perfil. Tente novamente.', 3000);
+        } finally {
+          loadingOverlay.classList.remove('active');
+        }
       });
-
-      // Atualizar temporizador se houver nível alugado
-      if (isLevelRented && !timerInterval) {
-        timerInterval = setInterval(() => {
-          updateTimerDisplay();
-          creditDailyIncome();
-        }, 1000);
-      }
     }
 
-    // Inicializar dados do usuário
-    async function initUserData() {
-      userData = await fetchUserData();
-      if (userData) {
-        balance = userData.balance || 500.00;
-        rentedLevel = userData.rented_level || 0;
-        rentalTimestamp = userData.rental_timestamp || 0;
-        lastIncomeTimestamp = userData.last_income_timestamp || 0;
-        document.getElementById('username').value = userData.username || '';
-        document.getElementById('invite-code').value = userData.invite_code || '';
-        document.getElementById('bank-name').value = userData.bank_name || '';
-        document.getElementById('iban').value = userData.iban || '';
-        await updateBalanceAndLevel();
-        await creditDailyIncome();
-      }
-    }
-
-    // Lógica do Perfil
-    const editProfileBtn = document.getElementById('editProfileBtn');
-    const ibanInput = document.getElementById('iban');
-    const ibanError = document.getElementById('iban-error');
-    editProfileBtn.addEventListener('click', async () => {
-      const bankName = document.getElementById('bank-name').value.trim();
-      const iban = ibanInput.value.trim();
-      if (!/^\d{21}$/.test(iban)) {
-        ibanError.classList.add('active');
-        return;
-      }
-      ibanError.classList.remove('active');
-      loadingOverlay.classList.add('active');
-      const success = await updateUserData({ bank_name: bankName, iban: iban });
-      loadingOverlay.classList.remove('active');
-      if (success) {
-        showNotification('Perfil atualizado com sucesso!', 3000);
-      }
-    });
-
-    // Função para atualizar o IBAN na seção de saque
-    function updateWithdrawIban() {
-      const withdrawIban = document.getElementById('withdraw-iban');
-      withdrawIban.value = userData && userData.iban ? userData.iban : '';
-    }
-
-    // Lógica de Depósito
-    const confirmDepositBtn = document.getElementById('confirmDepositBtn');
+    // Depósito
+    const depositForm = document.querySelector('.deposit__form');
     const depositAmountInput = document.getElementById('deposit-amount');
     const paymentMethodSelect = document.getElementById('payment-method');
     const proofUploadInput = document.getElementById('proof-upload');
     const proofPreview = document.getElementById('proof-preview');
+    const confirmDepositBtn = document.getElementById('confirmDepositBtn');
     const paymentDetails = document.getElementById('payment-details');
     const paymentDetailsContent = document.getElementById('payment-details-content');
 
-    // Atualizar detalhes de pagamento com base no método selecionado
     paymentMethodSelect.addEventListener('change', () => {
       const method = paymentMethodSelect.value;
-      paymentDetails.classList.add('active');
+      paymentDetails.classList.remove('active');
+      paymentDetailsContent.innerHTML = '';
       if (method === 'transferencia') {
         paymentDetailsContent.innerHTML = `
-          <p><span>ATL:</span> 005500003521779010133<br>Titular: 244 929060465</p>
-          <p><span>BAI:</span> 004000001399134110257<br>Titular: Francisco João</p>
-          <p><span>BFA:</span> 000600007136891230120<br>Titular: Francisco João</p>
+          <p><strong>*ATL:</strong> 005500003521779010133</p>
+          <p>Titular: 244 929060465</p>
+          <p><strong>*BAI:</strong> 00400001399134110257</p>
+          <p>Titular: Jõao José</p>
+          <p><strong>*BFA:</strong> 000600007136891230120</p>
+          <p>Titular: João José</p>
         `;
+        paymentDetails.classList.add('active');
       } else if (method === 'referencia') {
         paymentDetailsContent.innerHTML = `
-          <p><span>Entidade:</span> 10116</p>
-          <p><span>Referência:</span> 924170734</p>
+          <p><strong>Entidade:</strong> 10116</p>
+          <p><strong>Referência:</strong> 924170734</p>
         `;
-      } else {
-        paymentDetails.classList.remove('active');
-        paymentDetailsContent.innerHTML = '';
+        paymentDetails.classList.add('active');
       }
+      updateReferenceAmount();
     });
+
+    depositAmountInput.addEventListener('input', () => {
+      updateReferenceAmount();
+    });
+
+    function updateReferenceAmount() {
+      const amount = parseFloat(depositAmountInput.value) || 0;
+      const referenceAmount = document.getElementById('reference-amount');
+      if (referenceAmount) {
+        referenceAmount.textContent = amount.toLocaleString('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+    }
 
     proofUploadInput.addEventListener('change', () => {
       proofPreview.innerHTML = '';
       const file = proofUploadInput.files[0];
-      if (file) {
+      if (file && ['image/jpeg', 'image/png'].includes(file.type)) {
         const img = document.createElement('img');
         img.src = URL.createObjectURL(file);
         proofPreview.appendChild(img);
+      } else {
+        showNotification('Por favor, envie um arquivo JPG ou PNG.', 3000);
+        proofUploadInput.value = '';
       }
     });
 
@@ -1067,87 +1107,97 @@
         return;
       }
       if (!proofFile) {
-        showNotification('Por favor, envie o comprovativo do depósito.', 3000);
+        showNotification('Por favor, envie o comprovativo.', 3000);
+        return;
+      }
+
+      const now = new Date();
+      const hours = now.getHours();
+      if (hours < 9 || hours >= 21) {
+        showNotification('Depósitos só podem ser feitos entre 9h e 21h.', 3000);
         return;
       }
 
       loadingOverlay.classList.add('active');
+      try {
+        const fileExt = proofFile.name.split('.').pop();
+        const fileName = `${user.id}_${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('proofs')
+          .upload(`deposits/${fileName}`, proofFile);
+        if (uploadError) throw uploadError;
 
-      const fileExt = proofFile.name.split('.').pop();
-      const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage
-        .from('proofs')
-        .upload(`deposits/${fileName}`, proofFile);
+        const { data: { publicUrl } } = supabase.storage
+          .from('proofs')
+          .getPublicUrl(`deposits/${fileName}`);
 
-      if (uploadError) {
-        console.error('Erro ao enviar comprovativo:', uploadError);
-        showNotification('Erro ao enviar comprovativo. Tente novamente.', 3000);
+        const { error: insertError } = await supabase
+          .from('deposits')
+          .insert({
+            user_id: user.id,
+            amount: amount,
+            payment_method: paymentMethod,
+            proof_url: publicUrl,
+            status: 'pendente',
+            created_at: new Date().toISOString()
+          });
+        if (insertError) throw insertError;
+
+        depositForm.reset();
+        proofPreview.innerHTML = '';
+        paymentDetails.classList.remove('active');
+        paymentDetailsContent.innerHTML = '';
+        await renderDepositHistory();
+        showNotification('Depósito enviado para aprovação!', 3000);
+      } catch (error) {
+        console.error('Erro ao processar depósito:', error);
+        showNotification('Erro ao processar depósito. Tente novamente.', 3000);
+      } finally {
         loadingOverlay.classList.remove('active');
-        return;
       }
-
-      const { error: insertError } = await supabase
-        .from('deposits')
-        .insert({
-          user_id: user.id,
-          amount: amount,
-          payment_method: paymentMethod,
-          proof_url: fileName,
-          status: 'pendente'
-        });
-
-      if (insertError) {
-        console.error('Erro ao registrar depósito:', insertError);
-        showNotification('Erro ao registrar depósito. Tente novamente.', 3000);
-        loadingOverlay.classList.remove('active');
-        return;
-      }
-
-      depositAmountInput.value = '';
-      paymentMethodSelect.value = '';
-      proofUploadInput.value = '';
-      proofPreview.innerHTML = '';
-      paymentDetails.classList.remove('active');
-      paymentDetailsContent.innerHTML = '';
-      await renderDepositHistory();
-      loadingOverlay.classList.remove('active');
-      showNotification('Depósito enviado para análise!', 3000);
     });
 
     async function renderDepositHistory() {
-      const { data, error } = await supabase
-        .from('deposits')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      if (error) {
-        console.error('Erro ao buscar histórico de depósitos:', error);
-        return;
-      }
       const historyTableBody = document.getElementById('history-table-body');
-      const depositHistory = document.getElementById('deposit-history');
-      if (data.length > 0) {
-        depositHistory.style.display = 'block';
-        historyTableBody.innerHTML = '';
-        data.forEach(deposit => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${deposit.amount.toLocaleString()} Kz</td>
-            <td>${new Date(deposit.created_at).toLocaleString()}</td>
-            <td class="status-${deposit.status}">${deposit.status.charAt(0).toUpperCase() + deposit.status.slice(1)}</td>
-          `;
-          historyTableBody.appendChild(row);
-        });
-      } else {
-        depositHistory.style.display = 'none';
+      const depositHistorySection = document.getElementById('deposit-history');
+      historyTableBody.innerHTML = '';
+      try {
+        const { data, error } = await supabase
+          .from('deposits')
+          .select('amount, created_at, status')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        if (data.length > 0) {
+          depositHistorySection.style.display = 'block';
+          data.forEach(deposit => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${deposit.amount.toLocaleString('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kz</td>
+              <td>${new Date(deposit.created_at).toLocaleString('pt-PT')}</td>
+              <td class="status-${deposit.status}">${deposit.status.charAt(0).toUpperCase() + deposit.status.slice(1)}</td>
+            `;
+            historyTableBody.appendChild(row);
+          });
+        } else {
+          depositHistorySection.style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Erro ao carregar histórico de depósitos:', error);
+        showNotification('Erro ao carregar histórico de depósitos.', 3000);
       }
     }
 
-    // Lógica de Saque
-    const confirmWithdrawBtn = document.getElementById('confirmWithdrawBtn');
+    // Saque
+    const withdrawForm = document.querySelector('.withdraw__form');
     const withdrawAmountInput = document.getElementById('withdraw-amount');
     const withdrawIbanInput = document.getElementById('withdraw-iban');
     const withdrawIbanError = document.getElementById('withdraw-iban-error');
+    const confirmWithdrawBtn = document.getElementById('confirmWithdrawBtn');
+
+    async function updateWithdrawIban() {
+      withdrawIbanInput.value = userData.iban || '';
+    }
 
     confirmWithdrawBtn.addEventListener('click', async () => {
       const amount = parseFloat(withdrawAmountInput.value);
@@ -1157,127 +1207,128 @@
         showNotification('O valor mínimo de saque é 1500 Kz.', 3000);
         return;
       }
-      if (!/^\d{21}$/.test(iban)) {
-        withdrawIbanError.classList.add('active');
-        return;
-      }
       if (amount > balance) {
         showNotification('Saldo insuficiente para realizar o saque.', 3000);
         return;
       }
-
-      const currentHour = new Date().getHours();
-      if (currentHour < 9 || currentHour >= 19) {
-        showNotification('Os saques só podem ser feitos entre 9h e 19h.', 3000);
+      if (iban.length !== 21 || !/^\d{21}$/.test(iban)) {
+        withdrawIbanError.classList.add('active');
         return;
+      } else {
+        withdrawIbanError.classList.remove('active');
       }
 
-      loadingOverlay.classList.add('active');
+      const now = new Date();
+      const hours = now.getHours();
+      if (hours < 9 || hours >= 19) {
+        showNotification('Saques só podem ser feitos entre 9h e 19h.', 3000);
+        return;
+      }
 
       const fee = amount * 0.09;
       const netAmount = amount - fee;
-      balance -= amount;
-      await updateBalanceAndLevel();
 
-      const { error } = await supabase
-        .from('withdrawals')
-        .insert({
-          user_id: user.id,
-          amount: netAmount,
-          fee: fee,
-          iban: iban,
-          status: 'pendente'
-        });
+      loadingOverlay.classList.add('active');
+      try {
+        const { error } = await supabase
+          .from('withdrawals')
+          .insert({
+            user_id: user.id,
+            amount: amount,
+            net_amount: netAmount,
+            fee: fee,
+            iban: iban,
+            status: 'pendente',
+            created_at: new Date().toISOString()
+          });
+        if (error) throw error;
 
-      if (error) {
-        console.error('Erro ao registrar saque:', error);
-        showNotification('Erro ao registrar saque. Tente novamente.', 3000);
-        balance += amount; // Reverter o saldo em caso de erro
+        balance -= amount;
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ balance: balance })
+          .eq('id', user.id);
+        if (updateError) throw updateError;
+
+        withdrawForm.reset();
         await updateBalanceAndLevel();
+        await renderWithdrawHistory();
+        showNotification('Saque enviado para aprovação!', 3000);
+      } catch (error) {
+        console.error('Erro ao processar saque:', error);
+        showNotification('Erro ao processar saque. Tente novamente.', 3000);
+      } finally {
         loadingOverlay.classList.remove('active');
-        return;
       }
-
-      withdrawAmountInput.value = '';
-      await renderWithdrawHistory();
-      loadingOverlay.classList.remove('active');
-      showNotification('Saque enviado para análise!', 3000);
     });
 
     async function renderWithdrawHistory() {
-      const { data, error } = await supabase
-        .from('withdrawals')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      if (error) {
-        console.error('Erro ao buscar histórico de saques:', error);
-        return;
-      }
-      const historyTableBody = document.getElementById('withdraw-history-table-body');
-      const withdrawHistory = document.getElementById('withdraw-history');
-      if (data.length > 0) {
-        withdrawHistory.style.display = 'block';
-        historyTableBody.innerHTML = '';
-        data.forEach(withdrawal => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${withdrawal.amount.toLocaleString()} Kz</td>
-            <td>${new Date(withdrawal.created_at).toLocaleString()}</td>
-            <td class="status-${withdrawal.status}">${withdrawal.status.charAt(0).toUpperCase() + withdrawal.status.slice(1)}</td>
-          `;
-          historyTableBody.appendChild(row);
-        });
-      } else {
-        withdrawHistory.style.display = 'none';
+      const withdrawHistoryTableBody = document.getElementById('withdraw-history-table-body');
+      const withdrawHistorySection = document.getElementById('withdraw-history');
+      withdrawHistoryTableBody.innerHTML = '';
+      try {
+        const { data, error } = await supabase
+          .from('withdrawals')
+          .select('net_amount, created_at, status')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        if (data.length > 0) {
+          withdrawHistorySection.style.display = 'block';
+          data.forEach(withdrawal => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${withdrawal.net_amount.toLocaleString('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kz</td>
+              <td>${new Date(withdrawal.created_at).toLocaleString('pt-PT')}</td>
+              <td class="status-${withdrawal.status}">${withdrawal.status.charAt(0).toUpperCase() + withdrawal.status.slice(1)}</td>
+            `;
+            withdrawHistoryTableBody.appendChild(row);
+          });
+        } else {
+          withdrawHistorySection.style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Erro ao carregar histórico de saques:', error);
+        showNotification('Erro ao carregar histórico de saques.', 3000);
       }
     }
 
-    // Lógica de Equipe
+    // Equipa
     async function initTeamSection() {
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('invite_code')
-        .eq('id', user.id)
-        .single();
-      if (userError) {
-        console.error('Erro ao buscar código de convite:', userError);
-        return;
-      }
-      const inviteUrl = `${window.location.origin}/signup.html?invite=${userData.invite_code}`;
-      document.getElementById('invite-url').value = inviteUrl;
-
-      const { data: members, error: membersError } = await supabase
-        .from('users')
-        .select('email, active')
-        .eq('invited_by', user.id);
-      if (membersError) {
-        console.error('Erro ao buscar membros da equipe:', membersError);
-        return;
-      }
-      const totalMembers = members.length;
-      const activeMembers = members.filter(m => m.active).length;
-      document.getElementById('total-members').textContent = totalMembers;
-      document.getElementById('active-members').textContent = activeMembers;
-
+      const totalMembers = document.getElementById('total-members');
+      const activeMembers = document.getElementById('active-members');
+      const inviteUrlInput = document.getElementById('invite-url');
       const membersTableBody = document.getElementById('members-table-body');
-      membersTableBody.innerHTML = '';
-      if (totalMembers > 0) {
-        document.getElementById('team-members').style.display = 'block';
+
+      try {
+        inviteUrlInput.value = `${window.location.origin}/signup.html?invite=${userData.invite_code}`;
+
+        const { data: members, error: membersError } = await supabase
+          .from('users')
+          .select('email, active')
+          .eq('invited_by', user.id);
+        if (membersError) throw membersError;
+
+        totalMembers.textContent = members.length;
+        const activeCount = members.filter(member => member.active).length;
+        activeMembers.textContent = activeCount;
+
+        membersTableBody.innerHTML = '';
         members.forEach(member => {
           const row = document.createElement('tr');
+          row.setAttribute('role', 'row');
           row.innerHTML = `
-            <td>${member.email}</td>
-            <td class="status-${member.active ? 'ativo' : 'inativo'}">${member.active ? 'Ativo' : 'Inativo'}</td>
+            <td role="cell">${member.email}</td>
+            <td role="cell" class="status-${member.active ? 'ativo' : 'inativo'}">${member.active ? 'Ativo' : 'Inativo'}</td>
           `;
           membersTableBody.appendChild(row);
         });
-      } else {
-        document.getElementById('team-members').style.display = 'none';
+      } catch (error) {
+        console.error('Erro ao carregar dados da equipe:', error);
+        showNotification('Erro ao carregar dados da equipe. Tente novamente.', 3000);
       }
     }
 
-    // Copiar link de convite
     copyInviteBtn.addEventListener('click', () => {
       const inviteUrl = document.getElementById('invite-url');
       inviteUrl.select();
@@ -1291,3 +1342,4 @@
   </script>
 </body>
 </html>
+@powered by zinzino
