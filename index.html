@@ -58,7 +58,6 @@
     .logout-modal__btn--confirm { background: linear-gradient(135deg, #28a745, #1d7a34); }
     .logout-modal__btn--cancel { background: linear-gradient(135deg, #e63946, #b32d38); }
     .logout-modal__btn:hover { transform: translateY(-2px); }
-    /* Estilos para o modal de notificação */
     #notification-modal { position: fixed; inset: 0; background: rgba(0,0,0,.8); display: none; justify-content: center; align-items: center; z-index: 500; opacity: 0; transition: opacity 0.3s ease; }
     #notification-modal.active { display: flex; opacity: 1; }
     .notification-modal__content { background: linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.06)); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 1.5rem; max-width: 400px; width: 90%; box-shadow: 0 6px 16px rgba(0,0,0,.3); text-align: center; animation: fadeIn 0.3s ease; }
@@ -84,6 +83,7 @@
     #niveis .card__title { font-size: 1.4rem; font-weight: 600; background: var(--brand-gradient); -webkit-background-clip: text; color: transparent; margin-bottom: .75rem; }
     #niveis .card__info { font-size: .9rem; font-weight: 400; color: #f5f7fa; margin-bottom: .5rem; }
     #niveis .card__info span { color: #fff; font-weight: 600; }
+    #niveis .card__timer { font-size: .85rem; font-weight: 400; color: #f5f7fa; margin-top: .75rem; background: rgba(255,255,255,.1); padding: .5rem; border-radius: 8px; }
     #niveis .btn { display: inline-block; padding: .6rem 1.2rem; background: var(--brand-gradient); color: #fff; text-decoration: none; border-radius: 10px; font-size: .95rem; font-weight: 500; transition: transform .3s ease, box-shadow .3s ease; margin-top: 1rem; }
     #niveis .btn:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(142,45,226,.4); }
     #perfil { display: none; }
@@ -130,6 +130,10 @@
     .deposit__history td.status-pendente { color: #ffeb3b; }
     .deposit__history td.status-sucesso { color: #4caf50; }
     .deposit__history td.status-recusado { color: #f44336; }
+    .deposit__payment-details { margin-top: 1rem; padding: 1rem; background: rgba(255,255,255,.1); border-radius: 8px; font-size: 14px; color: #f5f7fa; display: none; }
+    .deposit__payment-details.active { display: block; }
+    .deposit__payment-details p { margin-bottom: .5rem; }
+    .deposit__payment-details span { font-weight: 600; color: #fff; }
     #saque { display: none; }
     .withdraw { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 80px 1rem 0; }
     .withdraw__inner { max-width: 700px; animation: fadeInUp 1.2s ease both; }
@@ -218,6 +222,7 @@
       #niveis .card { padding: 1.2rem; }
       #niveis .card__title { font-size: 1.2rem; }
       #niveis .card__info { font-size: .85rem; }
+      #niveis .card__timer { font-size: .8rem; padding: .4rem; }
       .sidebar { width: 220px; right: -220px; }
       .sidebar.active { right: 0; }
       .deposit h1, .withdraw h1, .team h1, .about h1, .contact h1 { font-size: 26px; }
@@ -334,8 +339,10 @@
         <div class="deposit__info__title">Informações de Depósito</div>
         <div class="deposit__info__content">
           <p><strong>Saldo Disponível:</strong> <span id="available-balance">0.00</span> Kz</p>
-          <p>1. Valor mínimo: 5000 Kz</p>
-          <p>2. Os depósitos devem ser feitos no período das 9h às 21h</p>
+          <p>1. Valor mínimo: 5000 Kz.</p>
+          <p>2. Os depósitos devem ser feitos no período das 9h às 21h.</p>
+          <p>3. O usuário deve selecionar o banco correspondente para efetuar o depósito. No entanto, se não haver o banco correspondente, deve escolher o método Pagamento por Referência.</p>
+          <p>4. Os depósitos são processados em até 15 minutos.</p>
         </div>
       </div>
       <form class="deposit__form">
@@ -352,6 +359,9 @@
             <option value="transferencia">Transferência Bancária</option>
             <option value="referencia">Pagamento por Referência</option>
           </select>
+          <div class="deposit__payment-details" id="payment-details">
+            <p id="payment-details-content"></p>
+          </div>
           <label for="proof-upload">Comprovativo</label>
           <input type="file" id="proof-upload" name="proof-upload" accept=".jpg,.jpeg,.png" />
           <div id="proof-preview" class="proof-preview"></div>
@@ -686,6 +696,8 @@
           updateWithdrawIban(); // Atualiza o IBAN na seção de saque
         } else if (target === 'equipa') {
           await initTeamSection();
+        } else if (target === 'niveis') {
+          await renderLevelCards();
         }
         loadingOverlay.classList.remove('active');
       } else {
@@ -787,6 +799,7 @@
     let rentedLevel = 0;
     let rentalTimestamp = 0;
     let lastIncomeTimestamp = 0;
+    let timerInterval = null; // Para armazenar o intervalo do temporizador
     const levels = [
       { level: 1, value: 5000, daily: 1000, days: 50 },
       { level: 2, value: 10000, daily: 2000, days: 50 },
@@ -833,400 +846,448 @@
       levelRented.textContent = rentedLevel;
       await updateUserData({ balance, rented_level: rentedLevel, rental_timestamp: rentalTimestamp, last_income_timestamp: lastIncomeTimestamp });
       updateWithdrawIban(); // Atualiza o IBAN na seção de saque
+      // Atualizar o temporizador no cartão alugado
+      if (rentedLevel > 0) {
+        updateTimerDisplay();
+      }
     }
 
-    async function checkDailyIncomeAndExpiration() {
+        // Função para formatar o tempo restante em HH:MM:SS
+    function formatTimeRemaining(ms) {
+      const totalSeconds = Math.floor(ms / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    // Função para atualizar o temporizador no cartão alugado
+    function updateTimerDisplay() {
       if (rentedLevel === 0) return;
+      const level = levels.find(l => l.level === rentedLevel);
+      if (!level) return;
       const now = Date.now();
-      const levelData = levels.find(l => l.level === rentedLevel);
-      const MS_IN_DAY = 24 * 60 * 60 * 1000;
-      const daysSinceRental = Math.floor((now - rentalTimestamp) / MS_IN_DAY);
-      if (daysSinceRental >= levelData.days) {
+      const endTime = rentalTimestamp + (level.days * 24 * 60 * 60 * 1000);
+      const timeRemaining = endTime - now;
+      if (timeRemaining <= 0) {
         rentedLevel = 0;
         rentalTimestamp = 0;
-        lastIncomeTimestamp = 0;
-        await updateUserData({ rented_level: 0, rental_timestamp: 0, last_income_timestamp: 0 });
+        clearInterval(timerInterval);
+        timerInterval = null;
         updateBalanceAndLevel();
         renderLevelCards();
-        showNotification('O nível alugado expirou após 50 dias. Alugue um novo nível.', 3000);
         return;
       }
-      const daysSinceLastIncome = Math.floor((now - lastIncomeTimestamp) / MS_IN_DAY);
-      if (daysSinceLastIncome >= 1) {
-        const dailyIncome = levelData.daily * daysSinceLastIncome;
-        balance += dailyIncome;
-        lastIncomeTimestamp = now;
-        await updateUserData({ balance, last_income_timestamp: lastIncomeTimestamp });
-        updateBalanceAndLevel();
-        renderLevelCards();
+      const cards = document.querySelectorAll('.card');
+      cards.forEach(card => {
+        if (parseInt(card.dataset.level) === rentedLevel) {
+          const timer = card.querySelector('.card__timer');
+          if (timer) {
+            timer.textContent = `Tempo restante: ${formatTimeRemaining(timeRemaining)}`;
+          }
+        }
+      });
+    }
+
+    // Função para calcular e creditar renda diária
+    async function creditDailyIncome() {
+      if (rentedLevel === 0) return;
+      const level = levels.find(l => l.level === rentedLevel);
+      if (!level) return;
+      const now = Date.now();
+      const timeSinceLastIncome = now - lastIncomeTimestamp;
+      const oneDayMs = 24 * 60 * 60 * 1000;
+      if (timeSinceLastIncome >= oneDayMs) {
+        const daysElapsed = Math.floor(timeSinceLastIncome / oneDayMs);
+        const income = level.daily * daysElapsed;
+        balance += income;
+        lastIncomeTimestamp = now - (timeSinceLastIncome % oneDayMs);
+        await updateBalanceAndLevel();
+        showNotification(`Renda diária de ${income.toLocaleString()} Kz creditada!`, 3000);
       }
     }
 
+    // Função para renderizar cartões de níveis
     async function renderLevelCards() {
-  console.log('Renderizando cartões de níveis...');
-  const container = document.querySelector('.cards-container');
-  container.innerHTML = levels.map(level => `
-    <div class="card ${rentedLevel === level.level ? 'rented' : balance < level.value ? 'disabled' : ''}" data-level="${level.level}">
-      <svg class="card__icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
-        <path fill="currentColor" d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79-4-4-4z"/>
-      </svg>
-      <div class="card__title">Nível ${level.level}</div>
-      <div class="card__info">Investimento: <span>${level.value.toLocaleString()} Kz</span></div>
-      <div class="card__info">Renda Diária: <span>${level.daily.toLocaleString()} Kz</span></div>
-      <div class="card__info">Duração: <span>${level.days} dias</span></div>
-      <a href="#" class="btn">Alugar</a>
-    </div>
-  `).join('');
+      const container = document.querySelector('.cards-container');
+      container.innerHTML = '';
+      const now = Date.now();
+      const isLevelRented = rentedLevel > 0 && (rentalTimestamp + (levels[rentedLevel - 1].days * 24 * 60 * 60 * 1000)) > now;
 
-  document.querySelectorAll('.card .btn').forEach(button => {
-    button.addEventListener('click', async (e) => {
-      e.preventDefault();
-      const card = button.closest('.card');
-      if (card.classList.contains('disabled') || card.classList.contains('rented')) return;
+      levels.forEach(level => {
+        const canAfford = balance >= level.value;
+        const isCurrentLevel = level.level === rentedLevel && isLevelRented;
+        const isDisabled = level.level < rentedLevel || (level.level > rentedLevel && !canAfford) || (isLevelRented && level.level !== rentedLevel);
 
-      const level = parseInt(card.dataset.level);
-      const levelData = levels.find(l => l.level === level);
-      if (balance < levelData.value) {
-        showNotification('Saldo insuficiente para alugar este nível.', 3000);
+        const card = document.createElement('div');
+        card.className = `card ${isDisabled ? 'disabled' : ''} ${isCurrentLevel ? 'rented' : ''}`;
+        card.dataset.level = level.level;
+        card.innerHTML = `
+          <svg class="card__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79-4-4-4z"/>
+          </svg>
+          <div class="card__title">Nível ${level.level}</div>
+          <p class="card__info">Investimento: <span>${level.value.toLocaleString()} Kz</span></p>
+          <p class="card__info">Renda Diária: <span>${level.daily.toLocaleString()} Kz</span></p>
+          <p class="card__info">Duração: <span>${level.days} dias</span></p>
+          ${isCurrentLevel ? `<p class="card__timer">Tempo restante: Calculando...</p>` : ''}
+          <a href="#" class="btn">${isCurrentLevel ? 'Alugado' : 'Alugar'}</a>
+        `;
+
+        if (!isDisabled && !isCurrentLevel) {
+          card.querySelector('.btn').addEventListener('click', async e => {
+            e.preventDefault();
+            if (balance < level.value) {
+              showNotification('Saldo insuficiente para alugar este nível.', 3000);
+              return;
+            }
+            loadingOverlay.classList.add('active');
+            balance -= level.value;
+            rentedLevel = level.level;
+            rentalTimestamp = Date.now();
+            lastIncomeTimestamp = Date.now();
+            await updateBalanceAndLevel();
+            await renderLevelCards();
+            loadingOverlay.classList.remove('active');
+            showNotification(`Nível ${level.level} alugado com sucesso!`, 3000);
+            // Iniciar o temporizador
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+              updateTimerDisplay();
+              creditDailyIncome();
+            }, 1000);
+          });
+        }
+        container.appendChild(card);
+      });
+
+      // Atualizar temporizador se houver nível alugado
+      if (isLevelRented && !timerInterval) {
+        timerInterval = setInterval(() => {
+          updateTimerDisplay();
+          creditDailyIncome();
+        }, 1000);
+      }
+    }
+
+    // Inicializar dados do usuário
+    async function initUserData() {
+      userData = await fetchUserData();
+      if (userData) {
+        balance = userData.balance || 500.00;
+        rentedLevel = userData.rented_level || 0;
+        rentalTimestamp = userData.rental_timestamp || 0;
+        lastIncomeTimestamp = userData.last_income_timestamp || 0;
+        document.getElementById('username').value = userData.username || '';
+        document.getElementById('invite-code').value = userData.invite_code || '';
+        document.getElementById('bank-name').value = userData.bank_name || '';
+        document.getElementById('iban').value = userData.iban || '';
+        await updateBalanceAndLevel();
+        await creditDailyIncome();
+      }
+    }
+
+    // Lógica do Perfil
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    const ibanInput = document.getElementById('iban');
+    const ibanError = document.getElementById('iban-error');
+    editProfileBtn.addEventListener('click', async () => {
+      const bankName = document.getElementById('bank-name').value.trim();
+      const iban = ibanInput.value.trim();
+      if (!/^\d{21}$/.test(iban)) {
+        ibanError.classList.add('active');
+        return;
+      }
+      ibanError.classList.remove('active');
+      loadingOverlay.classList.add('active');
+      const success = await updateUserData({ bank_name: bankName, iban: iban });
+      loadingOverlay.classList.remove('active');
+      if (success) {
+        showNotification('Perfil atualizado com sucesso!', 3000);
+      }
+    });
+
+    // Função para atualizar o IBAN na seção de saque
+    function updateWithdrawIban() {
+      const withdrawIban = document.getElementById('withdraw-iban');
+      withdrawIban.value = userData && userData.iban ? userData.iban : '';
+    }
+
+    // Lógica de Depósito
+    const confirmDepositBtn = document.getElementById('confirmDepositBtn');
+    const depositAmountInput = document.getElementById('deposit-amount');
+    const paymentMethodSelect = document.getElementById('payment-method');
+    const proofUploadInput = document.getElementById('proof-upload');
+    const proofPreview = document.getElementById('proof-preview');
+    const paymentDetails = document.getElementById('payment-details');
+    const paymentDetailsContent = document.getElementById('payment-details-content');
+
+    // Atualizar detalhes de pagamento com base no método selecionado
+    paymentMethodSelect.addEventListener('change', () => {
+      const method = paymentMethodSelect.value;
+      paymentDetails.classList.add('active');
+      if (method === 'transferencia') {
+        paymentDetailsContent.innerHTML = `
+          <p><span>ATL:</span> 005500003521779010133<br>Titular: 244 929060465</p>
+          <p><span>BAI:</span> 004000001399134110257<br>Titular: Francisco João</p>
+          <p><span>BFA:</span> 000600007136891230120<br>Titular: Francisco João</p>
+        `;
+      } else if (method === 'referencia') {
+        paymentDetailsContent.innerHTML = `
+          <p><span>Entidade:</span> 10116</p>
+          <p><span>Referência:</span> 924170734</p>
+        `;
+      } else {
+        paymentDetails.classList.remove('active');
+        paymentDetailsContent.innerHTML = '';
+      }
+    });
+
+    proofUploadInput.addEventListener('change', () => {
+      proofPreview.innerHTML = '';
+      const file = proofUploadInput.files[0];
+      if (file) {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        proofPreview.appendChild(img);
+      }
+    });
+
+    confirmDepositBtn.addEventListener('click', async () => {
+      const amount = parseFloat(depositAmountInput.value);
+      const paymentMethod = paymentMethodSelect.value;
+      const proofFile = proofUploadInput.files[0];
+
+      if (!amount || amount < 5000) {
+        showNotification('O valor mínimo de depósito é 5000 Kz.', 3000);
+        return;
+      }
+      if (!paymentMethod) {
+        showNotification('Selecione um método de pagamento.', 3000);
+        return;
+      }
+      if (!proofFile) {
+        showNotification('Por favor, envie o comprovativo do depósito.', 3000);
         return;
       }
 
       loadingOverlay.classList.add('active');
-      balance -= levelData.value;
-      rentedLevel = level;
-      rentalTimestamp = Date.now();
-      lastIncomeTimestamp = Date.now();
-      await updateUserData({ balance, rented_level: rentedLevel, rental_timestamp: rentalTimestamp, last_income_timestamp: lastIncomeTimestamp });
-      await updateBalanceAndLevel();
-      await renderLevelCards();
+
+      const fileExt = proofFile.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('proofs')
+        .upload(`deposits/${fileName}`, proofFile);
+
+      if (uploadError) {
+        console.error('Erro ao enviar comprovativo:', uploadError);
+        showNotification('Erro ao enviar comprovativo. Tente novamente.', 3000);
+        loadingOverlay.classList.remove('active');
+        return;
+      }
+
+      const { error: insertError } = await supabase
+        .from('deposits')
+        .insert({
+          user_id: user.id,
+          amount: amount,
+          payment_method: paymentMethod,
+          proof_url: fileName,
+          status: 'pendente'
+        });
+
+      if (insertError) {
+        console.error('Erro ao registrar depósito:', insertError);
+        showNotification('Erro ao registrar depósito. Tente novamente.', 3000);
+        loadingOverlay.classList.remove('active');
+        return;
+      }
+
+      depositAmountInput.value = '';
+      paymentMethodSelect.value = '';
+      proofUploadInput.value = '';
+      proofPreview.innerHTML = '';
+      paymentDetails.classList.remove('active');
+      paymentDetailsContent.innerHTML = '';
+      await renderDepositHistory();
       loadingOverlay.classList.remove('active');
-      showNotification(`Nível ${level} alugado com sucesso!`, 3000);
+      showNotification('Depósito enviado para análise!', 3000);
     });
+
+    async function renderDepositHistory() {
+      const { data, error } = await supabase
+        .from('deposits')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.error('Erro ao buscar histórico de depósitos:', error);
+        return;
+      }
+      const historyTableBody = document.getElementById('history-table-body');
+      const depositHistory = document.getElementById('deposit-history');
+      if (data.length > 0) {
+        depositHistory.style.display = 'block';
+        historyTableBody.innerHTML = '';
+        data.forEach(deposit => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${deposit.amount.toLocaleString()} Kz</td>
+            <td>${new Date(deposit.created_at).toLocaleString()}</td>
+            <td class="status-${deposit.status}">${deposit.status.charAt(0).toUpperCase() + deposit.status.slice(1)}</td>
+          `;
+          historyTableBody.appendChild(row);
+        });
+      } else {
+        depositHistory.style.display = 'none';
+      }
+    }
+
+    // Lógica de Saque
+    const confirmWithdrawBtn = document.getElementById('confirmWithdrawBtn');
+    const withdrawAmountInput = document.getElementById('withdraw-amount');
+    const withdrawIbanInput = document.getElementById('withdraw-iban');
+    const withdrawIbanError = document.getElementById('withdraw-iban-error');
+
+    confirmWithdrawBtn.addEventListener('click', async () => {
+      const amount = parseFloat(withdrawAmountInput.value);
+      const iban = withdrawIbanInput.value.trim();
+
+      if (!amount || amount < 1500) {
+        showNotification('O valor mínimo de saque é 1500 Kz.', 3000);
+        return;
+      }
+      if (!/^\d{21}$/.test(iban)) {
+        withdrawIbanError.classList.add('active');
+        return;
+      }
+      if (amount > balance) {
+        showNotification('Saldo insuficiente para realizar o saque.', 3000);
+        return;
+      }
+
+      const currentHour = new Date().getHours();
+      if (currentHour < 9 || currentHour >= 19) {
+        showNotification('Os saques só podem ser feitos entre 9h e 19h.', 3000);
+        return;
+      }
+
+      loadingOverlay.classList.add('active');
+
+      const fee = amount * 0.09;
+      const netAmount = amount - fee;
+      balance -= amount;
+      await updateBalanceAndLevel();
+
+      const { error } = await supabase
+        .from('withdrawals')
+        .insert({
+          user_id: user.id,
+          amount: netAmount,
+          fee: fee,
+          iban: iban,
+          status: 'pendente'
+        });
+
+      if (error) {
+        console.error('Erro ao registrar saque:', error);
+        showNotification('Erro ao registrar saque. Tente novamente.', 3000);
+        balance += amount; // Reverter o saldo em caso de erro
+        await updateBalanceAndLevel();
+        loadingOverlay.classList.remove('active');
+        return;
+      }
+
+      withdrawAmountInput.value = '';
+      await renderWithdrawHistory();
+      loadingOverlay.classList.remove('active');
+      showNotification('Saque enviado para análise!', 3000);
+    });
+
+    async function renderWithdrawHistory() {
+      const { data, error } = await supabase
+        .from('withdrawals')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.error('Erro ao buscar histórico de saques:', error);
+        return;
+      }
+      const historyTableBody = document.getElementById('withdraw-history-table-body');
+      const withdrawHistory = document.getElementById('withdraw-history');
+      if (data.length > 0) {
+        withdrawHistory.style.display = 'block';
+        historyTableBody.innerHTML = '';
+        data.forEach(withdrawal => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${withdrawal.amount.toLocaleString()} Kz</td>
+            <td>${new Date(withdrawal.created_at).toLocaleString()}</td>
+            <td class="status-${withdrawal.status}">${withdrawal.status.charAt(0).toUpperCase() + withdrawal.status.slice(1)}</td>
+          `;
+          historyTableBody.appendChild(row);
+        });
+      } else {
+        withdrawHistory.style.display = 'none';
+      }
+    }
+
+    // Lógica de Equipe
+    async function initTeamSection() {
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('invite_code')
+        .eq('id', user.id)
+        .single();
+      if (userError) {
+        console.error('Erro ao buscar código de convite:', userError);
+        return;
+      }
+      const inviteUrl = `${window.location.origin}/registro.html?invite=${userData.invite_code}`;
+      document.getElementById('invite-url').value = inviteUrl;
+
+      const { data: members, error: membersError } = await supabase
+        .from('users')
+        .select('email, active')
+        .eq('invited_by', user.id);
+      if (membersError) {
+        console.error('Erro ao buscar membros da equipe:', membersError);
+        return;
+      }
+      const totalMembers = members.length;
+      const activeMembers = members.filter(m => m.active).length;
+      document.getElementById('total-members').textContent = totalMembers;
+      document.getElementById('active-members').textContent = activeMembers;
+
+      const membersTableBody = document.getElementById('members-table-body');
+      membersTableBody.innerHTML = '';
+      if (totalMembers > 0) {
+        document.getElementById('team-members').style.display = 'block';
+        members.forEach(member => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${member.email}</td>
+            <td class="status-${member.active ? 'ativo' : 'inativo'}">${member.active ? 'Ativo' : 'Inativo'}</td>
+          `;
+          membersTableBody.appendChild(row);
+        });
+      } else {
+        document.getElementById('team-members').style.display = 'none';
+      }
+    }
+
+    // Copiar link de convite
+    copyInviteBtn.addEventListener('click', () => {
+      const inviteUrl = document.getElementById('invite-url');
+      inviteUrl.select();
+      document.execCommand('copy');
+      showNotification('Link de convite copiado!', 2000);
+    });
+
+    // Inicializar a página
+    await initializePage();
   });
-}
-
-// Inicializar dados do usuário
-async function initUserData() {
-  userData = await fetchUserData();
-  if (userData) {
-    balance = userData.balance || 500.00;
-    rentedLevel = userData.rented_level || 0;
-    rentalTimestamp = userData.rental_timestamp || 0;
-    lastIncomeTimestamp = userData.last_income_timestamp || 0;
-    await updateBalanceAndLevel();
-    await checkDailyIncomeAndExpiration();
-  }
-}
-
-// Perfil
-const editProfileBtn = document.getElementById('editProfileBtn');
-const usernameInput = document.getElementById('username');
-const inviteCodeInput = document.getElementById('invite-code');
-const bankNameInput = document.getElementById('bank-name');
-const ibanInput = document.getElementById('iban');
-const ibanError = document.getElementById('iban-error');
-
-async function initProfileSection() {
-  userData = await fetchUserData();
-  if (userData) {
-    usernameInput.value = userData.username || '';
-    inviteCodeInput.value = userData.invite_code || '';
-    bankNameInput.value = userData.bank_name || '';
-    ibanInput.value = userData.iban || '';
-  }
-}
-
-editProfileBtn.addEventListener('click', async () => {
-  const bankName = bankNameInput.value.trim();
-  const iban = ibanInput.value.trim();
-
-  if (!bankName || !iban) {
-    showNotification('Por favor, preencha todos os campos.', 3000);
-    return;
-  }
-
-  if (!/^\d{21}$/.test(iban)) {
-    ibanError.classList.add('active');
-    return;
-  } else {
-    ibanError.classList.remove('active');
-  }
-
-  loadingOverlay.classList.add('active');
-  const success = await updateUserData({ bank_name: bankName, iban });
-  loadingOverlay.classList.remove('active');
-  if (success) {
-    showNotification('Perfil atualizado com sucesso!', 3000);
-  }
-});
-
-// Depósito
-const depositAmountInput = document.getElementById('deposit-amount');
-const paymentMethodSelect = document.getElementById('payment-method');
-const proofUploadInput = document.getElementById('proof-upload');
-const proofPreview = document.getElementById('proof-preview');
-const confirmDepositBtn = document.getElementById('confirmDepositBtn');
-
-async function uploadProof(file) {
-  const fileName = `${user.id}_${Date.now()}_${file.name}`;
-  const { error } = await supabase.storage
-    .from('proofs')
-    .upload(`deposits/${fileName}`, file);
-  if (error) {
-    console.error('Erro ao fazer upload do comprovativo:', error);
-    showNotification('Erro ao fazer upload do comprovativo.', 3000);
-    return null;
-  }
-  const { data } = supabase.storage
-    .from('proofs')
-    .getPublicUrl(`deposits/${fileName}`);
-  return data.publicUrl;
-}
-
-proofUploadInput.addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      proofPreview.innerHTML = `<img src="${e.target.result}" alt="Comprovativo" />`;
-    };
-    reader.readAsDataURL(file);
-  } else {
-    proofPreview.innerHTML = '';
-  }
-});
-
-confirmDepositBtn.addEventListener('click', async () => {
-  const amount = parseFloat(depositAmountInput.value);
-  const paymentMethod = paymentMethodSelect.value;
-  const file = proofUploadInput.files[0];
-
-  if (!amount || amount < 5000) {
-    showNotification('O valor mínimo de depósito é 5000 Kz.', 3000);
-    return;
-  }
-
-  if (!paymentMethod) {
-    showNotification('Selecione um método de pagamento.', 3000);
-    return;
-  }
-
-  if (!file) {
-    showNotification('Faça upload do comprovativo.', 3000);
-    return;
-  }
-
-  const currentHour = new Date().getHours();
-  if (currentHour < 9 || currentHour >= 21) {
-    showNotification('Os depósitos só podem ser feitos entre 9h e 21h.', 3000);
-    return;
-  }
-
-  loadingOverlay.classList.add('active');
-  const proofUrl = await uploadProof(file);
-  if (!proofUrl) {
-    loadingOverlay.classList.remove('active');
-    return;
-  }
-
-  const { data, error } = await supabase
-    .from('deposits')
-    .insert({
-      user_id: user.id,
-      amount,
-      payment_method: paymentMethod,
-      proof_url: proofUrl,
-      status: 'pendente'
-    });
-
-  if (error) {
-    console.error('Erro ao registrar depósito:', error);
-    showNotification('Erro ao registrar depósito.', 3000);
-    loadingOverlay.classList.remove('active');
-    return;
-  }
-
-  depositAmountInput.value = '';
-  paymentMethodSelect.value = '';
-  proofUploadInput.value = '';
-  proofPreview.innerHTML = '';
-  await renderDepositHistory();
-  loadingOverlay.classList.remove('active');
-  showNotification('Depósito enviado para análise!', 3000);
-});
-
-async function renderDepositHistory() {
-  const { data: deposits, error } = await supabase
-    .from('deposits')
-    .select('amount, created_at, status')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('Erro ao buscar histórico de depósitos:', error);
-    showNotification('Erro ao carregar histórico de depósitos.', 3000);
-    return;
-  }
-
-  const historyTableBody = document.getElementById('history-table-body');
-  historyTableBody.innerHTML = deposits.map(deposit => `
-    <tr>
-      <td>${deposit.amount.toLocaleString()} Kz</td>
-      <td>${new Date(deposit.created_at).toLocaleString()}</td>
-      <td class="status-${deposit.status}">${deposit.status.charAt(0).toUpperCase() + deposit.status.slice(1)}</td>
-    </tr>
-  `).join('');
-
-  const depositHistory = document.getElementById('deposit-history');
-  depositHistory.style.display = deposits.length > 0 ? 'block' : 'none';
-}
-
-// Saque
-const withdrawAmountInput = document.getElementById('withdraw-amount');
-const withdrawIbanInput = document.getElementById('withdraw-iban');
-const withdrawIbanError = document.getElementById('withdraw-iban-error');
-const confirmWithdrawBtn = document.getElementById('confirmWithdrawBtn');
-
-async function updateWithdrawIban() {
-  userData = await fetchUserData();
-  if (userData && userData.iban) {
-    withdrawIbanInput.value = userData.iban;
-  } else {
-    withdrawIbanInput.value = '';
-  }
-}
-
-confirmWithdrawBtn.addEventListener('click', async () => {
-  const amount = parseFloat(withdrawAmountInput.value);
-  const iban = withdrawIbanInput.value.trim();
-
-  if (!amount || amount < 1500) {
-    showNotification('O valor mínimo de saque é 1500 Kz.', 3000);
-    return;
-  }
-
-  if (!iban || !/^\d{21}$/.test(iban)) {
-    withdrawIbanError.classList.add('active');
-    showNotification('Por favor, insira um IBAN válido no perfil.', 3000);
-    return;
-  } else {
-    withdrawIbanError.classList.remove('active');
-  }
-
-  if (amount > balance) {
-    showNotification('Saldo insuficiente para realizar o saque.', 3000);
-    return;
-  }
-
-  const currentHour = new Date().getHours();
-  if (currentHour < 9 || currentHour >= 19) {
-    showNotification('Os saques só podem ser feitos entre 9h e 19h.', 3000);
-    return;
-  }
-
-  loadingOverlay.classList.add('active');
-  const fee = amount * 0.09;
-  const netAmount = amount - fee;
-
-  const { data, error } = await supabase
-    .from('withdrawals')
-    .insert({
-      user_id: user.id,
-      amount,
-      net_amount: netAmount,
-      fee,
-      iban,
-      status: 'pendente'
-    });
-
-  if (error) {
-    console.error('Erro ao registrar saque:', error);
-    showNotification('Erro ao registrar saque.', 3000);
-    loadingOverlay.classList.remove('active');
-    return;
-  }
-
-  balance -= amount;
-  await updateUserData({ balance });
-  await updateBalanceAndLevel();
-  withdrawAmountInput.value = '';
-  await renderWithdrawHistory();
-  loadingOverlay.classList.remove('active');
-  showNotification('Saque enviado para análise!', 3000);
-});
-
-async function renderWithdrawHistory() {
-  const { data: withdrawals, error } = await supabase
-    .from('withdrawals')
-    .select('net_amount, created_at, status')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('Erro ao buscar histórico de saques:', error);
-    showNotification('Erro ao carregar histórico de saques.', 3000);
-    return;
-  }
-
-  const withdrawHistoryTableBody = document.getElementById('withdraw-history-table-body');
-  withdrawHistoryTableBody.innerHTML = withdrawals.map(withdrawal => `
-    <tr>
-      <td>${withdrawal.net_amount.toLocaleString()} Kz</td>
-      <td>${new Date(withdrawal.created_at).toLocaleString()}</td>
-      <td class="status-${withdrawal.status}">${withdrawal.status.charAt(0).toUpperCase() + withdrawal.status.slice(1)}</td>
-    </tr>
-  `).join('');
-
-  const withdrawHistory = document.getElementById('withdraw-history');
-  withdrawHistory.style.display = withdrawals.length > 0 ? 'block' : 'none';
-}
-
-// Equipa
-async function initTeamSection() {
-  const { data: members, error: membersError } = await supabase
-    .from('users')
-    .select('email, active')
-    .eq('invited_by', user.id);
-  if (membersError) {
-    console.error('Erro ao buscar membros da equipe:', membersError);
-    showNotification('Erro ao carregar membros da equipe.', 3000);
-    return;
-  }
-
-  const totalMembers = members.length;
-  const activeMembers = members.filter(m => m.active).length;
-  document.getElementById('total-members').textContent = totalMembers;
-  document.getElementById('active-members').textContent = activeMembers;
-
-  const membersTableBody = document.getElementById('members-table-body');
-  membersTableBody.innerHTML = members.map(member => `
-    <tr role="row">
-      <td role="cell">${member.email}</td>
-      <td role="cell" class="status-${member.active ? 'ativo' : 'inativo'}">${member.active ? 'Ativo' : 'Inativo'}</td>
-    </tr>
-  `).join('');
-
-  const inviteUrlInput = document.getElementById('invite-url');
-  inviteUrlInput.value = `${window.location.origin}/registro.html?invite=${userData.invite_code}`;
-}
-
-copyInviteBtn.addEventListener('click', () => {
-  const inviteUrlInput = document.getElementById('invite-url');
-  inviteUrlInput.select();
-  document.execCommand('copy');
-  showNotification('Link de convite copiado!', 3000);
-});
-
-// Inicializar página
-await initializePage();
-await initProfileSection();
-await renderDepositHistory();
-await initTeamSection();
-
-// Atualizar renda diária a cada 5 minutos
-setInterval(checkDailyIncomeAndExpiration, 5 * 60 * 1000);
-});
   </script>
 </body>
 </html>
