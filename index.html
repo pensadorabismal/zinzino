@@ -1160,35 +1160,44 @@
 
     let isRenderingHistory = false;
     async function renderDepositHistory() {
-      const historyTableBody = document.getElementById('history-table-body');
-      const depositHistorySection = document.getElementById('deposit-history');
-      historyTableBody.innerHTML = '';
-      try {
+    console.log('renderDepositHistory chamado, hora:', new Date().toISOString());
+    try {
         const { data, error } = await supabase
-          .from('deposits')
-          .select('amount, created_at, status')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-        if (error) throw error;
-        if (data.length > 0) {
-          depositHistorySection.style.display = 'block';
-          data.forEach(deposit => {
+            .from('deposits')
+            .select('amount, created_at, status')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+        console.log('Dados retornados do Supabase:', data);
+        if (error) {
+            console.error('Erro ao buscar histórico de depósitos:', error);
+            showNotification('Erro ao carregar histórico de depósitos.', 3000);
+            return;
+        }
+        const historyTableBody = document.getElementById('history-table-body');
+        console.log('Limpando tabela history-table-body');
+        historyTableBody.innerHTML = '';
+        if (data.length === 0) {
+            console.log('Nenhum depósito encontrado, ocultando seção');
+            document.getElementById('deposit-history').style.display = 'none';
+            return;
+        }
+        console.log('Exibindo seção deposit-history com', data.length, 'depósitos');
+        document.getElementById('deposit-history').style.display = 'block';
+        data.forEach((deposit, index) => {
+            console.log(`Adicionando linha para depósito ${index + 1}:`, deposit);
             const row = document.createElement('tr');
             row.innerHTML = `
-              <td>${deposit.amount.toLocaleString('pt-AO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kz</td>
-              <td>${new Date(deposit.created_at).toLocaleString('pt-PT')}</td>
-              <td class="status-${deposit.status}">${deposit.status.charAt(0).toUpperCase() + deposit.status.slice(1)}</td>
+                <td>${deposit.amount.toLocaleString('pt-AO', { style: 'currency', currency: 'AOA' })}</td>
+                <td>${new Date(deposit.created_at).toLocaleString('pt-PT')}</td>
+                <td class="status-${deposit.status}">${deposit.status.charAt(0).toUpperCase() + deposit.status.slice(1)}</td>
             `;
             historyTableBody.appendChild(row);
-          });
-        } else {
-          depositHistorySection.style.display = 'none';
-        }
-      } catch (error) {
-        console.error('Erro ao carregar histórico de depósitos:', error);
+        });
+    } catch (error) {
+        console.error('Erro ao renderizar histórico de depósitos:', error);
         showNotification('Erro ao carregar histórico de depósitos.', 3000);
-      }
     }
+}
 
     // Saque
     const withdrawForm = document.querySelector('.withdraw__form');
