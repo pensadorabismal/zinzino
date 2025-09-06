@@ -306,7 +306,7 @@
         <p class="lead">É a ZINZINO – a próxima geração de magnatas.</p>
         <hr>
         <div class="hero__balance">
-          <p>Saldo Disponível: <span id="balance-amount">0.00 Kz</span></p>
+          <p>Saldo Disponível: <span id="balance-amount">500.00 Kz</span></p>
           <p class="hero__level">Nível Alugado: <span id="level-rented">0</span></p>
         </div>
         <div class="cards-container"></div>
@@ -828,7 +828,7 @@
       .single();
     if (error) throw error;
     userData = data;
-    balance = data.balance || 500.00;
+    balance = (data.balance !== null && data.balance !== undefined) ? data.balance : 500.00;
     rentedLevel = data.rented_level || 0;
     rentalTimestamp = data.rental_timestamp || 0;
     lastIncomeTimestamp = data.last_income_timestamp || 0; // Já deve ser um número (bigint)
