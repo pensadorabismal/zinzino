@@ -1219,18 +1219,18 @@
 
     if (method === 'transferencia') {
       paymentDetailsContent.innerHTML = `
-        <p><strong>Detalhes para Transferência Bancária:</strong></p>
-        <p>Banco: Banco Exemplo</p>
-        <p>IBAN: 123456789012345678901</p>
-        <p>Titular: Zinzino Ltda</p>
+        <p><strong>*ATL:</strong> 005500006986251910141</p>
+          <p>Titular: 244 924093614</p>
+          <p><strong>*BAI:</strong> 00400001399134110257</p>
+          <p>Titular: Jõao José</p>
+          <p><strong>*BFA:</strong> 000600007136891230120</p>
+          <p>Titular: João José</p>
       `;
       paymentDetails.classList.add('active');
     } else if (method === 'referencia') {
       paymentDetailsContent.innerHTML = `
-        <p><strong>Detalhes para Pagamento por Referência:</strong></p>
-        <p>Entidade: 12345</p>
-        <p>Referência: 678 901 234</p>
-        <p>Valor: Insira o valor no campo acima</p>
+        <p><strong>Entidade:</strong> 10116</p>
+          <p><strong>Referência:</strong> 974116057</p>
       `;
       paymentDetails.classList.add('active');
     } else {
